@@ -111,48 +111,7 @@ if (typeof jQuery=='function') {
     jQuery.fn.resize=function(a,b,c){return Elements.resize($(this),a,b,c)};
     jQuery.fn.center=function(a){return Elements.center($(this),a)}; 
 }
-Elements.checkBox = function(checkBox, imgOn, imgOff, bOn) {
-    checkBox = Cast.cjquery(checkBox);
-    if (! checkBox.length)
-        return jQuery();
-    
-    bOn = Cast.cboolean(bOn);
-    
-    checkBox.after("<img />");
-    var customBox = checkBox.next("img");
-    
-    customBox
-        .attr("imgOn", imgOn)
-        .attr("imgOff", imgOff)
-        .attr("src", ((bOn)?imgOn:imgOff) )
-        .show();
-    
-    if(bOn)
-        checkBox.attr('checked', 'checked');
-    else
-        checkBox.removeAttr('checked'); //override css setting
-    
-    checkBox.hide();
-        
-    customBox.click(function() {
-        var jqCheck = jQuery(this).prev(); 
-        if ( ! jqCheck.attr('checked')) 
-            jqCheck.attr('checked', 'checked');
-        else
-            jqCheck.removeAttr('checked');
-        jqCheck.change();
-    });
-    
-    checkBox.change(function(e){
-        var cust = jQuery(e.target).next("img");
-        cust.attr("src", cust.attr(((!!jQuery(this).attr('checked'))?"imgOn":"imgOff")) );
-        return true;
-    });
-    
-    return customBox;
-};
-
-//    Elements.checkBox=function(a,d,e,b){a=Cast.cjquery(a);if(!a.length)return jQuery();b=Cast.cboolean(b);a.after("<img />");var c=a.next("img");c.attr("imgOn",d).attr("imgOff",e).attr("src",b?d:e).show();b?a.attr("checked","checked"):a.removeAttr("checked");a.hide();c.click(function(){var a=jQuery(this).prev();a.attr("checked")?a.removeAttr("checked"):a.attr("checked","checked");a.change()});a.change(function(a){a=jQuery(a.target).next("img");a.attr("src",a.attr(jQuery(this).attr("checked")?"imgOn": "imgOff"));return!0});return c};
+    Elements.checkBox=function(a,d,e,b){a=Cast.cjquery(a);if(!a.length)return jQuery();b=Cast.cboolean(b);a.after("<img />");var c=a.next("img");c.attr("imgOn",d).attr("imgOff",e).attr("src",b?d:e).show();b?a.attr("checked","checked"):a.removeAttr("checked");a.hide();c.click(function(){var a=jQuery(this).prev();a.attr("checked")?a.removeAttr("checked"):a.attr("checked","checked");a.change()});a.change(function(a){a=jQuery(a.target).next("img");a.attr("src",a.attr(jQuery(this).attr("checked")?"imgOn": "imgOff"));return!0});return c};
     Elements.setLink=function(a){a=Cast.cjquery(a);a.css("cursor","pointer");a.click(function(){var b=$(this),a=Cast.cstring(b.attr("href")),b=Cast.cstring(b.attr("target"));a&&(b?window.open(a,b):window.location.href=a)});return this};
     Elements.center=function(a,b){var c=Elements.elementData(a,"container"),d={parent:!1,width:0,height:0,vertical:!0,horizontal:!0,position:"absolute"};jQuery.extend(d,c,Cast.cobject(b));Elements.elementData(a,"container",d);container=this.getContainer(a,d);itop=container.height()/2-a.height()/2;ileft=container.width()/2-a.width()/2;"absolute"==d.position?a.css({position:"absolute",left:d.horizontal?ileft:Cast.cint(a.css("left")),top:d.vertical?itop:Cast.cint(a.css("top"))}):a.css({position:"relative", "margin-left":d.horizontal?ileft:Cast.cint(a.css("margin-left")),"margin-top":d.vertical?itop:Cast.cint(a.css("margin-top"))});return a};
     Elements.elementData=function(a,b,c){"object"==typeof b&&(c=b,b="");c=Cast.cobject(c);(b=Cast.cstring(b))||(b="default");a=Cast.cjquery(a);1<a.length&&(a=a.get(0));if(a.length){var d=Cast.cobject(a.data("Images"));d[b]=Cast.cobject(d[b]);$.extend(d[b],c);a.data("Images",d);return d[b]}return{}}; 
