@@ -130,128 +130,24 @@ if (typeof jQuery=='function') {
     Images.fitImage=function(c,d){var e=this;return this.loadImage(c).done(function(a,c,b){data={parent:!1,width:0,height:0,speed:0,bound:!0};jQuery.extend(data,Cast.cobject(d));Elements.elementData(b,"container",data);a=Elements.getContainer(b,data);e.fitInArea(b,a.width,a.height,data.speed,!data.bound)})};
     Images.exists=function(b){return jQuery.Deferred(function(a){"undefined"!=typeof b&&b||a.reject(a,"fail","blank url","");jQuery("<img src='"+b+"' />").load(function(){a.resolve(b,"success",a)}).error(function(){a.reject(a,"fail","error loading image",b)})}).promise()};
 
+
 /**
  * User location functions
  * dependancies:  jQuery 1.6+, Cast, URL, Images
  */
-var Location = {
-    "urlLocations":    "http://www."+ URL.domain +"/load_locations",
-    "urlUserLocation": "http://www."+ URL.domain +"/ext_api/detect_location.php",
-
-    /**
-     * Gets a list of locations based on type
-     * Format: [[code,country],[code,country],...];
-     * @param {string} type - city, state or country
-     * @param {string} code
-     * @return {jqXHR}
-     */
-    getList: function(type, code, char2)
-    {
-        type  = Cast.cstring(type);
-        code  = Cast.cstring(code);
-        char2 = Cast.cstring(char2);
-        if ( ! type )
-            type = "country";
-            
-        var selector = "?type=" + type + "&code=" + code + ((char2)?"&char2="+char2:"");
-        
-        return jQuery.get(this.urlLocations + selector);
-    },
-    getCountries: function(code) {
-        code = Cast.cstring(code); //blank = country codes, value = old country codes
-        return this.getList('country_code', "", code);
-    },
-    getStates: function(country, code) {
-        country = (! Cast.cstring(country))?"US":country;
-        code = Cast.cstring(code); //blank = &&## (iso3166 state), value = && (state code)
-        return this.getList('state_code', country, code);
-    },
-    getCities: function(state) {
-        state = Cast.cstring(state); //iso3166 state code &&##
-        return this.getList('city_id', state);
-    },
-    /**
-     * Gets user location data
-     * format:  {"sel_locCountry":"CA","sel_locState":"CA08","sel_locCity":6161888,"latitude":"60","longitude":"-95"}
-     * @param {string} the fallback image upon failure
-     * @return {jqXHR}
-     *      done(data, textStatus, jqXHR)
-     *      fail(jqXHR, textStatus, errorThrown, data)
-     */
-    getLocation: function()
-    {
-        return jQuery.Deferred(function(odf){
-            jQuery.ajax({
-                url:Location.urlUserLocation,
-                type: 'GET',
-                crossDomain: true,
-                async: false,
-                contentType: "application/json",
-                jsonpCallback: 'jsonDetectLocation',
-                dataType: 'jsonp',
-                data: {"CALLBACK": "t"},
-                success:function(data, textStatus, jqXHR){
-                    if (typeof data != 'object')
-                        odf.reject(jqXHR, "failed", "invalid location data", data);
-                    odf.resolve(data, "success", jqXHR);
-                },
-                error:function(jqxhr, status, err){
-                    odf.reject(jqxhr, status, err, {});
-                }
-            });
-        }).promise();
-    },
-    /**
-     * Gets/Tests background image from detect_location.php
-     * format: http://pod.[PL]/geo/1280x720/6161888.jpg
-     * @param {string} the fallback image upon failure
-     * @return {jqXHR}
-     *      done(imageUrlString, area, data)
-     *      fail(jqXHR, status, errString, data) //mimic ajax format
-     */
-    getImage: function(resolution) {
-        resolution = Cast.cstring(resolution);
-        if(! resolution)
-            resolution = "1280x720";
-        
-        return $.Deferred(function(odf){
-            Location.getLocation().done(function(data, textStatus, jqXHR){
-                var urlImageBase = 'http://pod.' + URL.domain + '/geo/' + resolution + '/';
-                
-                Images.exists(urlImageBase + data.sel_locCity + '.jpg')
-                    .done(function(urlImage) {
-                        odf.resolve(urlImage, "city", data);
-                    })
-                    .fail(function(jqXHR, status, err) {
-                        Images.exists(urlImageBase + data.sel_locState + '.jpg')
-                            .done(function(urlImage) {
-                                odf.resolve(urlImage, "state", data);
-                            })
-                            .fail(function(jqXHR, status, err) {
-                                Images.exists(urlImageBase + data.sel_locCountry + '.jpg')
-                                    .done(function(urlImage) {
-                                        odf.resolve(urlImage, "country", data);
-                                    })
-                                    .fail(function(jqXHR, status, err) {
-                                        odf.reject(odf, "failed", "image from detect location could not be resolved", data);
-                                    });
-                            });
-                    });                
-            });
-        }).promise();
-    },
-    /**
-     * Test this feature
-     */
-    imageTest: function() {
-        Location.getImage().done(function(image, area) {
-            console.log("location image loaded("+area+"): " + image);
-        }).fail(function(xhr,stat,err) {
-            console.log("location image error: " + err);
-        });
-        return this;
-    }
-}
+var Location={
+    urlLocations:"http://www."+URL.domain+"/load_locations",
+    urlUserLocation:"http://www."+URL.domain+"/ext_api/detect_location.php",
+    
+    getList:function(a,b,c){a=Cast.cstring(a);b=Cast.cstring(b);c=Cast.cstring(c);a||(a="country");return jQuery.get(this.urlLocations+("?type="+a+"&code="+b+(c?"&char2="+c:"")))},
+    getCountries:function(a){a=Cast.cstring(a);return this.getList("country_code","",a)},
+    getStates:function(a,b){a=Cast.cstring(a)?a:"US";b=Cast.cstring(b);return this.getList("state_code", a,b)},
+    getCities:function(a){a=Cast.cstring(a);return this.getList("city_id",a)},
+    
+    getLocation:function(){return jQuery.Deferred(function(a){jQuery.ajax({url:Location.urlUserLocation,type:"GET",crossDomain:!0,async:!1,contentType:"application/json",jsonpCallback:"jsonDetectLocation",dataType:"jsonp",data:{CALLBACK:"t"},success:function(b,c,d){"object"!=typeof b&&a.reject(d,"failed","invalid location data",b);a.resolve(b,"success",d)},error:function(b,c,d){a.reject(b,c,d,{})}})}).promise()},
+    getImage:function(a){(a= Cast.cstring(a))||(a="1280x720");return $.Deferred(function(b){Location.getLocation().done(function(c,d,f){var e="http://pod."+URL.domain+"/geo/"+a+"/";Images.exists(e+c.sel_locCity+".jpg").done(function(a){b.resolve(a,"city",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locState+".jpg").done(function(a){b.resolve(a,"state",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locCountry+".jpg").done(function(a){b.resolve(a,"country",c)}).fail(function(a,d,e){b.reject(b,"failed","image from detect location could not be resolved", c)})})})})}).promise()},
+    imageTest:function(){Location.getImage().done(function(a,b){console.log("location image loaded("+b+"): "+a)}).fail(function(a,b,c){console.log("location image error: "+c)});return this}
+};
 
 
 
