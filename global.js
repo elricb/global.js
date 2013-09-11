@@ -41,7 +41,7 @@ var JSON;JSON||(JSON={});
 JSON.stringify = (Cast.isFunction(JSON.stringify))?JSON.stringify: function(){return "";};
 JSON.parse = Cast.cjson;
 var jQueryVersion = 0;
-if ( Cast.isFunction(jQuery) ) {
+if ( typeof jQuery == 'function' ) {
     jQueryVersion = jQuery.fn.jquery;
     jQueryVersion = jQueryVersion.split(".").slice(0,2).join("."); //only want the first increment e.g. 1.7.55 = 1.7
     jQueryVersion = Cast.cfloat(jQueryVersion,0);
@@ -63,9 +63,9 @@ var URL={
     protocol: Cast.cstring(window.location.protocol),   //http:
     query:    Cast.cstring(window.location.search),     //v=3&c=2
     
-    setValues:function(){return this.setDomain().setPort()},
+    setValues:function(){return this.setDomain().setPort();},
     setDomain:function(){this.domain=Cast.cstring(window.location.hostname);var a=this.domain.split(".");if(1>a.length){for(var a=window.location.href.split("/"),b=0;b<a.length&& -1==a[b].indexOf(".");b++);a=a[b].split(".")}2<a.length&&a.shift();this.domain=a.join(".");return this},
-    setPort:function(){this.port=Cast.cstring(this.port);this.port||(this.port="21");return this},
+    setPort:function(){this.port=Cast.cstring(this.port);this.port||(this.port="21");return this;},
     getQuery:function(a){a=Cast.cstring(a);if(!a)return this.query;for(var b=this.query.split("&"),c=0;c<b.length&&b[c].substr(0,b[c].indexOf("="))!=a;c++);return b[c].substr(0,b[c].indexOf("="))!=a?"":b[c].substr(b[c].indexOf("=")+1)},
     setQuery:function(a,b){a=Cast.cjson(a);b=Cast.isString(b)?b:this.query; var c=b.split("&"),e={},d;for(d in c)(k2=Cast.cstring(c[d].split("=")[0]))&&(e[k2]=Cast.cstring(c[d].split("=")[1]));for(d in a)e[d]=Cast.cstring(a[d]);if("function"==typeof jQuery)return $.param(e);c="";for(d in e)c+="&"+d+"="+e[d];return c.replace(/^&/,"")}
 };
@@ -244,7 +244,7 @@ var Location = {
     },
     /**
      * Gets/Tests background image from detect_location.php
-     * format: http://pod.sexsearchcom.com/geo/1280x720/6161888.jpg
+     * format: http://pod.[PL]/geo/1280x720/6161888.jpg
      * @param {string} the fallback image upon failure
      * @return {jqXHR}
      *      done(imageUrlString, area, data)
