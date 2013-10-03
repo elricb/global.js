@@ -4,7 +4,7 @@
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version:3.2
+    version:3.3
 }; //functions shared across all elements
 var Images = {
     version:1.1
@@ -67,7 +67,8 @@ jQuery.fn.center = function(options)
  * @return {jquery} the new check element
  * @event checkbox.change()
  */
-Elements.checkBox = function(checkBox, imgOn, imgOff, bOn) {
+Elements.checkBox = function(checkBox, imgOn, imgOff, bOn) 
+{
     checkBox = Cast.cjquery(checkBox);
     if (! checkBox.length)
         return jQuery();
@@ -113,7 +114,8 @@ Elements.checkBox = function(checkBox, imgOn, imgOff, bOn) {
  * @param {jquery/string} s - selector to convert elements into links (tracks clicks)
  * @return {this}
  */
-Elements.setLink = function(s) {
+Elements.setLink = function(s) 
+{
     s = Cast.cjquery(s);
     s.css("cursor", "pointer");
     s.click(function() {
@@ -132,23 +134,28 @@ Elements.setLink = function(s) {
 /**
  * Determines width and height of container based on container options
  * @param {jquery} ele - the contained jquery element
- * @param {json} container - container options
- * @return {json (int,int,jquery)} width, height, container - defaults to window width/height
+ * @param {json} options - container options
+ * @return {json} width/height - defaults to window width/height
  */
 Elements.getContainer = function(ele, container)
 {
-    container = Cast.cobject(container);
+    var parent = jQuery();
+    container  = Cast.cobject(container);
     
     //Check if parent search is defined (accepts search string, jquery objects and html elements)
-    if ( Cast.isString(container.parent) )
+    if ( Cast.isString(container.parent) ) {
         parent = ele.parents(container.parent);
-    else if ( Cast.cboolean(container.parent) )
+    }
+    else if ( Cast.isObject(container.parent) ) {
+        parent = Cast.cjquery(container.parent);
+    }
+    else if ( Cast.cboolean(container.parent) ) {
         parent = ele.parent();
-    else
-        parent = jQuery();
-        
+    }
+    
+    //override width/height
     if ( parent.length ) {
-        container.width = parent.width();
+        container.width  = parent.width();
         container.height = parent.height();
     }
     
@@ -168,50 +175,75 @@ Elements.getContainer = function(ele, container)
  * @param {json} options - center options ([parent], [width], [height], [position])
  * @return {jquery} ele
  */
-Elements.center = function(ele, options) 
-    {
-        //get/store center and container data
-        var stored = Elements.elementData(ele, "container");
-        var data = {
-            parent:false, //parent element selector to fit into
-            width:0,      //width to fit into
-            height:0,     //height to fit into
-            vertical:true,
-            horizontal:true,
-            position:"absolute" //will position inside first container that is relative, otherwise centers in window
-        };
-        jQuery.extend(data, stored, Cast.cobject(options) );
-        Elements.elementData(ele, "container", data);
+Elements.center = function(ele, settings) 
+    {  
+        var k,
+            itop,
+            ileft,
+            pos,
+            data = {
+                parent     : false, //parent element selector to fit into
+                width      : 0,     //width to fit into
+                height     : 0,     //height to fit into
+                vertical   : true,
+                horizontal : true,
+                persist    : false
+            };
+            
+        ele = Cast.cjquery(ele);
+        settings = Cast.cobject(settings);
         
-        container = this.getContainer(ele, data);
+        for (k in data) {    
+            data[k] = (typeof settings[k] != 'undefined')? settings[k] : data[k]; 
+        }
+        
+        container = Elements.getContainer(ele, data);
+          
         if ( ! container.container.length ) {
             ele.css({
-                "margin-left" : "auto",
-                "margin-right": "auto",
+                "margin-left"    : "auto",
+                "margin-right"   : "auto",
                 "vertical-align" : "middle"
             });
             return ele;
         }
-            
-        var itop = Math.round((container.height/2)-(ele.height()/2)) + "px";
-        var ileft = Math.round((container.width/2)-(ele.width()/2)) + "px";
         
-        if ( data.position == "absolute" )
+        itop  = Math.round((container.height/2)-(ele.height()/2)) + "px";
+        ileft = Math.round((container.width/2)-(ele.width()/2)) + "px";
+        pos   = ele.css("position"); 
+        
+        if ( pos == "absolute" || pos == "fixed" ) {
             ele.css({
-                "position":"absolute",
                 "left" : ileft, 
                 "top"  : itop
             });
-        else
-            ele.css({
-                "position":"relative",
-                "margin-left" : ( (! data.horizontal)? Cast.cint(ele.css("margin-left")): ileft ),
-                "margin-top"  : ( (! data.vertical)?   Cast.cint(ele.css("margin-top")): itop )
+            if (data.persist && container.container.length && typeof container.container.on == 'function') {
+                container.container.on('resize', function(){ 
+                    ele.css({
+                        "left" : Math.round( (($(this).outerWidth() || $(this).width())/2) - ((ele.outerWidth() || ele.width())/2) ) + "px", 
+                        "top"  : Math.round( (($(this).outerHeight() || $(this).height())/2) - ((ele.outerHeight() || ele.height())/2) ) + "px"
+                    });
+                });
+            }
+            return ele;
+        }
+
+        ele.css({
+            "margin-left" : ( (! data.horizontal)? Cast.cint(ele.css("margin-left")): ileft ),
+            "margin-top"  : ( (! data.vertical)?   Cast.cint(ele.css("margin-top")): itop )
+        });
+        if (data.persist && container.container.length && typeof container.container.on == 'function') {
+            container.container.on('resize', function(){ 
+                ele.css({
+                    "margin-left" : Math.round( (($(this).outerWidth() || $(this).width())/2) - ((ele.outerWidth() || ele.width())/2) ) + "px", 
+                    "margin-top"  : Math.round( (($(this).outerHeight() || $(this).height())/2) - ((ele.outerHeight() || ele.height())/2) ) + "px"
+                });
             });
-            
+        }
+        
         return ele;
     };
-
+    
 /**
  * When image functions are performed, image data is stored on the element
  * In the case of multiple elements, it always returns the data of the first

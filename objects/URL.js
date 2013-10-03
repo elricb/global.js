@@ -3,14 +3,14 @@
  * General URL string parsing
  */
 URL = {
-    "version": 1,
-    "href":   Cast.cstring(window.location.href),
-    "host":   Cast.cstring(window.location.hostname),
-    "domain": "",
-    "hash":   Cast.cstring(window.location.hash),
-    "port":   Cast.cstring(window.location.port),
+    "version" : 1.1,
+    "href"    : Cast.cstring(window.location.href),
+    "host"    : Cast.cstring(window.location.hostname),
+    "domain"  : "",
+    "hash"    : Cast.cstring(window.location.hash),
+    "port"    : Cast.cstring(window.location.port),
     "protocol": Cast.cstring(window.location.protocol),
-    "query":  Cast.cstring(window.location.search),
+    "query"   : (Cast.cstring(window.location.search).split("?").length > 1)?Cast.cstring(window.location.search).split("?")[1]:Cast.cstring(window.location.search),
     
     setValues: function()
     {
@@ -71,7 +71,8 @@ URL = {
     /**
      * Get an altered Query string based on existing or custom
      * @param {json} updates - kvp of changed query values
-     * @param {string} query - a query string to override url query
+     * @param {string} [query] - a query string to use instead of this.query
+     * @return {string} the new query string
      */
     setQuery : function(updates, query)
     {
@@ -91,13 +92,13 @@ URL = {
            values[k] = Cast.cstring(updates[k]);
         
         if (typeof jQuery == 'function')
-            return $.param(values);
+            return jQuery.param(values);
         
         var str = "";
         for ( var k in values )
             str += "&" + k + "=" + values[k];
         return str.replace(/^&/, '');
-    },
+    }
     
 };
 URL.setValues();

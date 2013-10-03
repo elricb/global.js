@@ -2,6 +2,7 @@
  * global.js
  * Should exist across all PL's on all pages
  * All code should have safe wrappers and error fallback to ensure no script failures under any conditions (versions, third-party, browsers)
+ * Uses psudo minification for live error pin-pointing
  *************************************** */
 
 /**
@@ -54,20 +55,21 @@ if ( typeof jQuery == 'function' ) {
  * example: http://somewhere.domain.com:21/hi.html?v=3&c=2#chapter
  */
 var URL={
-    version:  1,
-    href:     Cast.cstring(window.location.href),       //http://somewhere.domain.com:21/hi.html?v=3&c=2#chapter
-    host:     Cast.cstring(window.location.hostname),   //somewhere.domain.com
-    domain:   "",                                       //domain.com
-    hash:     Cast.cstring(window.location.hash),       //#chapter
-    port:     Cast.cstring(window.location.port),       //21
-    protocol: Cast.cstring(window.location.protocol),   //http:
-    query:    Cast.cstring(window.location.search),     //v=3&c=2
+    version   : 1.1,
+    href      : Cast.cstring(window.location.href),            //http://somewhere.domain.com:21/hi.html?v=3&c=2#chapter
+    host      : Cast.cstring(window.location.hostname),        //somewhere.domain.com
+    domain    : "",                                          //domain.com
+    hash      : Cast.cstring(window.location.hash),            //#chapter
+    port      : Cast.cstring(window.location.port),            //21
+    protocol  : Cast.cstring(window.location.protocol),    //http:
+    //v=3&c=2
+    query     : 1<Cast.cstring(window.location.search).split("?").length?Cast.cstring(window.location.search).split("?")[1]:Cast.cstring(window.location.search),
     
-    setValues:function(){return this.setDomain().setPort();},
-    setDomain:function(){this.domain=Cast.cstring(window.location.hostname);var a=this.domain.split(".");if(1>a.length){for(var a=window.location.href.split("/"),b=0;b<a.length&& -1==a[b].indexOf(".");b++);a=a[b].split(".")}2<a.length&&a.shift();this.domain=a.join(".");return this},
-    setPort:function(){this.port=Cast.cstring(this.port);this.port||(this.port="21");return this;},
-    getQuery:function(a){a=Cast.cstring(a);if(!a)return this.query;for(var b=this.query.split("&"),c=0;c<b.length&&b[c].substr(0,b[c].indexOf("="))!=a;c++);return b[c].substr(0,b[c].indexOf("="))!=a?"":b[c].substr(b[c].indexOf("=")+1)},
-    setQuery:function(a,b){a=Cast.cjson(a);b=Cast.isString(b)?b:this.query; var c=b.split("&"),e={},d;for(d in c)(k2=Cast.cstring(c[d].split("=")[0]))&&(e[k2]=Cast.cstring(c[d].split("=")[1]));for(d in a)e[d]=Cast.cstring(a[d]);if("function"==typeof jQuery)return $.param(e);c="";for(d in e)c+="&"+d+"="+e[d];return c.replace(/^&/,"")}
+    setValues : function(){return this.setDomain().setPort();},
+    setDomain : function(){this.domain=Cast.cstring(window.location.hostname); var a=this.domain.split(".");if(1>a.length){for(var a=window.location.href.split("/"),b=0;b<a.length&&-1==a[b].indexOf(".");b++);a=a[b].split(".")}2<a.length&&a.shift();this.domain=a.join(".");return this;},
+    setPort   : function(){this.port=Cast.cstring(this.port);this.port||(this.port="21");return this;},
+    getQuery  : function(a){a=Cast.cstring(a);if(!a)return this.query;for(var b=this.query.split("&"),c=0;c<b.length&&b[c].substr(0,b[c].indexOf("="))!=a;c++);return b[c].substr(0,b[c].indexOf("="))!=a?"":b[c].substr(b[c].indexOf("=")+ 1);},
+    setQuery  : function(a,b){a=Cast.cjson(a);b=Cast.isString(b)?b:this.query;var c=b.split("&"),e={},d;for(d in c)(k2=Cast.cstring(c[d].split("=")[0]))&&(e[k2]=Cast.cstring(c[d].split("=")[1]));for(d in a)e[d]=Cast.cstring(a[d]);if("function"==typeof jQuery)return jQuery.param(e);c="";for(d in e)c+="&"+d+"="+e[d];return c.replace(/^&/,"");}
 };
 URL.setValues();
 
@@ -102,8 +104,8 @@ function getCookie(name)  {
  * From: objects/Elements.js
  * dependancies:  jQuery 1.6+, Cast, Image
  */
-var Elements = {version:3.2};
-var Images   = {version:1};
+var Elements = {version:3.3};
+var Images   = {version:1.1};
 
 if (typeof jQuery=='function') {
     jQuery.fn.fitIn=function(a){return Images.fitImages(this,a)};
@@ -111,9 +113,10 @@ if (typeof jQuery=='function') {
     jQuery.fn.resize=function(a,b,c){return Elements.resize($(this),a,b,c)};
     jQuery.fn.center=function(a){return Elements.center($(this),a)}; 
 }
+    Elements.getContainer=function(c,a){var b=jQuery();a=Cast.cobject(a);Cast.isString(a.parent)?b=c.parents(a.parent):Cast.isObject(a.parent)?b=Cast.cjquery(a.parent):Cast.cboolean(a.parent)&&(b=c.parent());b.length&&(a.width=b.width(),a.height=b.height());if(Cast.cint(a.width)&&Cast.cint(a.height))return{width:a.width,height:a.height,container:b};b=c.parent();b.length||(b=jQuery(window));return{width:b.width(),height:b.height(),container:b}};
     Elements.checkBox=function(a,d,e,b){a=Cast.cjquery(a);if(!a.length)return jQuery();b=Cast.cboolean(b);a.after("<img />");var c=a.next("img");c.attr("imgOn",d).attr("imgOff",e).attr("src",b?d:e).show();b?a.attr("checked","checked"):a.removeAttr("checked");a.hide();c.click(function(){var a=jQuery(this).prev();a.attr("checked")?a.removeAttr("checked"):a.attr("checked","checked");a.change()});a.change(function(a){a=jQuery(a.target).next("img");a.attr("src",a.attr(jQuery(this).attr("checked")?"imgOn": "imgOff"));return!0});return c};
     Elements.setLink=function(a){a=Cast.cjquery(a);a.css("cursor","pointer");a.click(function(){var b=$(this),a=Cast.cstring(b.attr("href")),b=Cast.cstring(b.attr("target"));a&&(b?window.open(a,b):window.location.href=a)});return this};
-    Elements.center=function(a,b){var c=Elements.elementData(a,"container"),d={parent:!1,width:0,height:0,vertical:!0,horizontal:!0,position:"absolute"};jQuery.extend(d,c,Cast.cobject(b));Elements.elementData(a,"container",d);container=this.getContainer(a,d);itop=container.height()/2-a.height()/2;ileft=container.width()/2-a.width()/2;"absolute"==d.position?a.css({position:"absolute",left:d.horizontal?ileft:Cast.cint(a.css("left")),top:d.vertical?itop:Cast.cint(a.css("top"))}):a.css({position:"relative", "margin-left":d.horizontal?ileft:Cast.cint(a.css("margin-left")),"margin-top":d.vertical?itop:Cast.cint(a.css("margin-top"))});return a};
+    Elements.center=function(a,d){var b,e,f,c={parent:!1,width:0,height:0,vertical:!0,horizontal:!0,persist:!1};a=Cast.cjquery(a);d=Cast.cobject(d);for(b in c)c[b]="undefined"!=typeof d[b]?d[b]:c[b];container=Elements.getContainer(a,c);if(!container.container.length)return a.css({"margin-left":"auto","margin-right":"auto","vertical-align":"middle"}),a;b=Math.round(container.height/2-a.height()/2)+"px";e=Math.round(container.width/2-a.width()/2)+"px";f=a.css("position");if("absolute"==f||"fixed"==f){a.css({left:e, top:b});if(c.persist&&container.container.length&&"function"==typeof container.container.on)container.container.on("resize",function(){a.css({left:Math.round(($(this).outerWidth()||$(this).width())/2-(a.outerWidth()||a.width())/2)+"px",top:Math.round(($(this).outerHeight()||$(this).height())/2-(a.outerHeight()||a.height())/2)+"px"})});return a}a.css({"margin-left":c.horizontal?e:Cast.cint(a.css("margin-left")),"margin-top":c.vertical?b:Cast.cint(a.css("margin-top"))});if(c.persist&&container.container.length&& "function"==typeof container.container.on)container.container.on("resize",function(){a.css({"margin-left":Math.round(($(this).outerWidth()||$(this).width())/2-(a.outerWidth()||a.width())/2)+"px","margin-top":Math.round(($(this).outerHeight()||$(this).height())/2-(a.outerHeight()||a.height())/2)+"px"})});return a};
     Elements.elementData=function(a,b,c){"object"==typeof b&&(c=b,b="");c=Cast.cobject(c);(b=Cast.cstring(b))||(b="default");a=Cast.cjquery(a);1<a.length&&(a=a.get(0));if(a.length){var d=Cast.cobject(a.data("Images"));d[b]=Cast.cobject(d[b]);$.extend(d[b],c);a.data("Images",d);return d[b]}return{}}; 
     Elements.resize=function(a,b,c,d){Cast.isNumber(b)&&(b+="px");Cast.isNumber(c)&&(c+="px");d=Cast.cint(d);return 0<d?a.animate({width:b,height:c},d):a.css({width:b,height:c})};
     Images.setLoaded=function(a,b){b=Cast.cboolean(b,!0);Cast.cjquery(a).data("loaded",b);return this};
@@ -136,19 +139,19 @@ if (typeof jQuery=='function') {
  * dependancies:  jQuery 1.6+, Cast, URL, Images
  */
 var Location={
-    urlLocations:"http://www."+URL.domain+"/load_locations",
-    urlUserLocation:"http://www."+URL.domain+"/ext_api/detect_location.php",
+    version         : 1.1,
+    urlLocations    : "http://www."+URL.domain+"/load_locations",
+    urlUserLocation : "http://www."+URL.domain+"/ext_api/detect_location.php",
     
-    getList:function(a,b,c){a=Cast.cstring(a);b=Cast.cstring(b);c=Cast.cstring(c);a||(a="country");return jQuery.get(this.urlLocations+("?type="+a+"&code="+b+(c?"&char2="+c:"")))},
-    getCountries:function(a){a=Cast.cstring(a);return this.getList("country_code","",a)},
-    getStates:function(a,b){a=Cast.cstring(a)?a:"US";b=Cast.cstring(b);return this.getList("state_code", a,b)},
-    getCities:function(a){a=Cast.cstring(a);return this.getList("city_id",a)},
+    getList         : function(a,b,c){a=Cast.cstring(a);b=Cast.cstring(b);c=Cast.cstring(c);a||(a="country");return jQuery.get(this.urlLocations+("?type="+a+"&code="+b+(c?"&char2="+c:"")))},
+    getCountries    : function(a){a=Cast.cstring(a);return this.getList("country_code","",a)},
+    getStates       : function(a,b){a=Cast.cstring(a)?a:"US";b=Cast.cstring(b);return this.getList("state_code", a,b)},
+    getCities       : function(a){a=Cast.cstring(a);return this.getList("city_id",a)},
     
-    getLocation:function(){return jQuery.Deferred(function(a){jQuery.ajax({url:Location.urlUserLocation,type:"GET",crossDomain:!0,async:!1,contentType:"application/json",jsonpCallback:"jsonDetectLocation",dataType:"jsonp",data:{CALLBACK:"t"},success:function(b,c,d){"object"!=typeof b&&a.reject(d,"failed","invalid location data",b);a.resolve(b,"success",d)},error:function(b,c,d){a.reject(b,c,d,{})}})}).promise()},
-    getImage:function(a){(a= Cast.cstring(a))||(a="1280x720");return $.Deferred(function(b){Location.getLocation().done(function(c,d,f){var e="http://pod."+URL.domain+"/geo/"+a+"/";Images.exists(e+c.sel_locCity+".jpg").done(function(a){b.resolve(a,"city",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locState+".jpg").done(function(a){b.resolve(a,"state",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locCountry+".jpg").done(function(a){b.resolve(a,"country",c)}).fail(function(a,d,e){b.reject(b,"failed","image from detect location could not be resolved", c)})})})})}).promise()},
-    imageTest:function(){Location.getImage().done(function(a,b){console.log("location image loaded("+b+"): "+a)}).fail(function(a,b,c){console.log("location image error: "+c)});return this}
+    getLocation     : function(){return jQuery.Deferred(function(a){jQuery.ajax({url:Location.urlUserLocation,type:"GET",crossDomain:!0,async:!1,contentType:"application/json",jsonpCallback:"jsonDetectLocation",dataType:"jsonp",data:{CALLBACK:"t"},success:function(b,c,d){"object"!=typeof b&&a.reject(d,"failed","invalid location data",b);a.resolve(b,"success",d)},error:function(b,c,d){a.reject(b,c,d,{})}})}).promise()},
+    getImage        : function(a){(a= Cast.cstring(a))||(a="1280x720");return $.Deferred(function(b){Location.getLocation().done(function(c,d,f){var e="http://pod."+URL.domain+"/geo/"+a+"/";Images.exists(e+c.sel_locCity+".jpg").done(function(a){b.resolve(a,"city",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locState+".jpg").done(function(a){b.resolve(a,"state",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locCountry+".jpg").done(function(a){b.resolve(a,"country",c)}).fail(function(a,d,e){b.reject(b,"failed","image from detect location could not be resolved", c)})})})})}).promise()},
+    imageTest       : function(){Location.getImage().done(function(a,b){console.log("location image loaded("+b+"): "+a)}).fail(function(a,b,c){console.log("location image error: "+c)});return this}
 };
-
 
 
 /*  SWFObject v2.2 <http://code.google.com/p/swfobject/> 

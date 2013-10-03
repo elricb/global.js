@@ -3,6 +3,7 @@
  * dependancies:  jQuery 1.6+, Cast, URL, Images
  */
 var Location = {
+     version: 1.1,
     "urlLocations":    "http://www."+ URL.domain +"/load_locations",
     "urlUserLocation": "http://www."+ URL.domain +"/ext_api/detect_location.php",
 
