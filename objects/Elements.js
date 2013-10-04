@@ -298,6 +298,9 @@ Elements.centerParentResize = function(jqe, jqp)
 
 Elements.startWindowResize = function(f)
 {
+    if (Elements.startWindowResizeOn != 'undefined')
+        return;
+    Elements.startWindowResizeOn = true;
     Elements.timeout = false;
     $(window).resize(function() {
         Elements.windowTime = new Date();
@@ -326,24 +329,15 @@ Elements.windowResize = function(e)
  */
 Elements.sizeParentResize = function(jqe, mxw, mxh)
 {
-    var tw = $(window).width(),
-        th = $(window).height();
-    if (tw < mxw)
-        jqe.width(tw);
-    if (th < mxh)
-        jqe.height(th);
-    
-    if (typeof jqp.on != 'function')
-        return jqp.bind('resize', function(){
-            Elements.centerParent(jqe, jqp);
-        });
-    
-    return jqp.on('resize', 
-        {"jqp":jqp,"jqe":jqe},
-        function(e){
-            Elements.centerParent(e.data.jqe, e.data.jqp);
-        }
-    );
+    Elements.startWindowResize();
+    jQuery(window).on('Elements.Resize', function(){
+        var tw = $(window).width(),
+            th = $(window).height();
+        if (tw < mxw)
+            jqe.width(tw);
+        if (th < mxh)
+            jqe.height(th);
+    });
 };
 
 /**
