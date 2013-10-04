@@ -4,8 +4,8 @@
  * dependancies: javascript 1.0
  */
 var Cast = {
-    //version (straight count)
-    v:3,
+    //version
+    v:3.1,
     /**
      * convert anything to integer
      * @param {mixed} [i] - variable to convert
@@ -161,6 +161,35 @@ var Cast = {
         if ( typeof df != 'undefined' && typeof j != 'object')
             return df;
         return this.cobject(j);
+    },
+    /**
+     * converts to json to string
+     * @param {mixed} [j] - variable to convert
+     * @param {mixed} [df] - default to return on cast error
+     * @return {string} or default on error
+     */
+    csjson : function(j, df)
+    {
+        if ( this.isObject(j) )
+            if ( typeof JSON != 'undefined' )
+                try { //throws error if improperly assembled json
+                    j = JSON.stringify(j);
+                } catch(e) {
+                    j = {"error":e.message}
+                }
+            else { //simple string json
+                a=new Array();
+                for(i in j)
+                    if( obj.hasOwnProperty( prop ) )
+                        if (this.isObject(i[j]))
+                            a.push("\""+this.cstring(j)+"\":"+this.csjson(i[j])+"");
+                        else
+                            a.push("\""+this.cstring(j)+"\":\""+this.cstring(i[j])+"\"");
+                return "{"+a.join()+"}";
+            }
+        if ( typeof df != 'undefined' )
+            return df;
+        return this.cstring(j);
     },
     /**
      * convert anything to jquery object

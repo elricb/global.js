@@ -105,7 +105,7 @@ function getCookie(name)  {
  * dependancies:  jQuery 1.6+, Cast, Image
  */
 var Elements = {version:3.3};
-var Images   = {version:1.1};
+var Images   = {version:1.2};
 
 if (typeof jQuery=='function') {
     jQuery.fn.fitIn=function(a){return Images.fitImages(this,a)};
@@ -121,7 +121,7 @@ if (typeof jQuery=='function') {
     Elements.resize=function(a,b,c,d){Cast.isNumber(b)&&(b+="px");Cast.isNumber(c)&&(c+="px");d=Cast.cint(d);return 0<d?a.animate({width:b,height:c},d):a.css({width:b,height:c})};
     Images.setLoaded=function(a,b){b=Cast.cboolean(b,!0);Cast.cjquery(a).data("loaded",b);return this};
     Images.isLoaded=function(a){return Cast.cboolean(Cast.cjquery(a).data("loaded"))};
-    Images.loadImages=function(a){a=Cast.cjquery(a);var b=this;return jQuery.Deferred(function(c){a.each(function(d,e){b.loadImage($(e)).done(function(b,e,g){d>=a.length-1&&c.resolve(g)})});a.length||c.reject(a,"no image elements to preload")}).promise()}; 
+    Images.loadImages=function(a){a=Cast.cjquery(a);var b=this;return jQuery.Deferred(function(c){a.each(function(e,d){b.loadImage(jQuery(d)).done(function(b,d,f){e>=a.length-1&&c.resolve(a)})});a.length||c.reject(a,"no image elements to preload")}).promise()}; 
     Images.loadImage=function(a){var b=this;return jQuery.Deferred(function(c){var d=Cast.cobject(Elements.elementData(a));if(0!=Cast.cint(d.owidth)&&0!=Cast.cint(d.oheight))return c.resolve(d.owidth,d.oheight,a),this;var e=new Image,f=Cast.cstring(a.attr("src"));e.onload=function(){Elements.elementData(a,{owidth:e.width,oheight:e.height});b.setLoaded(a);c.resolve(e.width,e.height,a)};e.onerror=function(b){Elements.elementData(a,{owidth:a.width(),oheight:a.height()});c.reject(a.width(),a.height(),a,"invalid src: "+ f)};e.src=f;e.complete&&"pending"==c.state&&(Elements.elementData(a,{owidth:e.width,oheight:e.height}),b.setLoaded(a),c.resolve(e.width,e.height,a))}).promise()};
     Images.getRatioW=function(a,b){var c=Cast.cobject(Elements.elementData(a)),c=Cast.cint(c.owidth)/Cast.cint(c.oheight);return isNaN(c)?0:b*c};
     Images.getRatioH=function(a,b){var c=Cast.cobject(Elements.elementData(a)),c=Cast.cint(c.oheight)/Cast.cint(c.owidth);return isNaN(c)?0:b*c}; 

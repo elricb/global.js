@@ -4,58 +4,72 @@
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version:3.3
+    version : 3.4,
+    o       : [],
+    tick    : 200,
+    timeout : false
 }; //functions shared across all elements
 var Images = {
-    version:1.1
+    version:1.2
 };   //functions shared across all images
 
-if ( typeof Cast != 'object' )
-    var Cast={
-        v:3,
-        cint:function(a,b){"undefined"==typeof b&&(b=0);if("undefined"==typeof a)return b;a=parseInt(a,10);return isNaN(a)?b:a},
-        cfloat:function(a,b){"undefined"==typeof b&&(b=0);if("undefined"==typeof a)return b;a=parseFloat(a,10);return isNaN(a)?b:a},
-        isNumber:function(a){return"number"==typeof a||"object"==typeof a&&a&&a.constructor==Number?!0:!1},
-        cobject:function(a,b){"undefined"==typeof b&&(b={});return"object"==typeof a&&a?a:b},
-        isObject:function(a){return"object"==typeof a&&a?!0:!1},
-        cstring:function(a, b){"undefined"==typeof b&&(b="");return"undefined"==typeof a?b:a+""},
-        isString:function(a){return"string"==typeof a||"object"==typeof a&&a&&a.constructor==String?!0:!1},
-        cboolean:function(a,b){"undefined"==typeof b&&(b=!1);return"undefined"==typeof a?b:!!a},
-        isBoolean:function(a){return"boolean"==typeof a||"object"==typeof a&&a&&a.constructor==Boolean?!0:!1},
-        cjson:function(a,b){if(!this.isObject(a)&&this.isString(a))if("undefined"!=typeof JSON)try{a=JSON.parse(a)}catch(c){a={error:c.message}}else try{a= eval("("+a+")")}catch(d){a={error:d.message}}return"undefined"!=typeof b&&"object"!=typeof a?b:this.cobject(a)},
-        cjquery:function(a,b){"undefined"==typeof b&&(b=jQuery());return"undefined"!=typeof a&&a?jQuery(a):b},
-        isJquery:function(a){return"object"==typeof a&&a&&a.jquery?!0:!1},
-        cdate:function(a,b){"undefined"==typeof b&&(b=Date());if("undefined"==typeof a)return b;a=Date.parse(a);return isNaN(a)?b:a},
-        isDate:function(a){return"object"==typeof a&&a&&a.constructor==Date?!0:!1},
-        cdefault:function(a,b){"undefined"== typeof b&&(b=null);return"undefined"==typeof a?b:a},
-        isFunction:function(a){return"function"==typeof a||"object"==typeof a&&a&&a.constructor==Function?!0:!1}
-    };
 
-(function ($) {
-
-
+if (typeof jQuery=='function') {
 /**
  * jquery plugins
  */
-jQuery.fn.fitIn = function(options)
+    jQuery.fn.fitIn = function(options)
     {
         return Images.fitImages(this, options);
     };
-
-jQuery.fn.preload = function()
+    
+    jQuery.fn.preload = function()
     {
         return Images.loadImages(this);
     };
-
-jQuery.fn.resize = function(w,h,effect)
+    
+    jQuery.fn.resize = function(w,h,effect)
     {
         return Elements.resize(jQuery(this), w, h, effect);
     };
     
-jQuery.fn.center = function(options)
+    jQuery.fn.center = function(options)
     {
         return Elements.center(jQuery(this), options);
     };
+
+}
+
+Elements.isHTMLNode = function(o){
+    return (
+        typeof Node === "object" ? o instanceof Node : 
+        o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName==="string"
+    );
+};
+
+Elements.isHTMLElement = function(o){
+    return (
+        typeof HTMLElement === "object" ? o instanceof HTMLElement : //DOM2
+        o && typeof o === "object" && o !== null && o.nodeType === 1 && typeof o.nodeName==="string"
+    );
+};
+
+Elements.isHTMLObject = function(o){
+    return (Elements.isHTMLElement() || Elements.isHTMLNode());
+};
+
+Elements.add = function(o) {
+    ie = Elements.o.length;
+    Elements.o[ie] = Cast.cjquery(o);
+    return ie;
+};
+
+Elements.get = function(ie) {
+    ie = Cast.cint(ie);
+    if (ie < Elements.o.length)
+        return Elements.o[ie];
+    return jQuery();
+};
 
 /**
  * Assign custom images to replace checkbox
@@ -160,13 +174,13 @@ Elements.getContainer = function(ele, container)
     }
     
     if ( Cast.cint(container.width) && Cast.cint(container.height) )
-        return {"width":container.width, "height":container.height, "container": parent};
+        return {"width":container.width, "height":container.height, "jq": parent};
     
-    parent = ele.parent();
+    parent = (ele.parent());
     if ( ! parent.length )
         parent = jQuery(window);
         
-    return {"width":parent.width(), "height":parent.height(), "container": parent};
+    return {"width":parent.width(), "height":parent.height(), "jq": parent};
 };
 
 /**
@@ -176,108 +190,220 @@ Elements.getContainer = function(ele, container)
  * @return {jquery} ele
  */
 Elements.center = function(ele, settings) 
-    {  
-        var k,
-            itop,
-            ileft,
-            pos,
-            data = {
-                parent     : false, //parent element selector to fit into
-                width      : 0,     //width to fit into
-                height     : 0,     //height to fit into
-                vertical   : true,
-                horizontal : true,
-                persist    : false
-            };
-            
-        ele = Cast.cjquery(ele);
-        settings = Cast.cobject(settings);
-        
-        for (k in data) {    
-            data[k] = (typeof settings[k] != 'undefined')? settings[k] : data[k]; 
-        }
-        
-        container = Elements.getContainer(ele, data);
-          
-        if ( ! container.container.length ) {
-            ele.css({
-                "margin-left"    : "auto",
-                "margin-right"   : "auto",
-                "vertical-align" : "middle"
-            });
-            return ele;
-        }
-        
-        itop  = Math.round((container.height/2)-(ele.height()/2)) + "px";
-        ileft = Math.round((container.width/2)-(ele.width()/2)) + "px";
-        pos   = ele.css("position"); 
-        
-        if ( pos == "absolute" || pos == "fixed" ) {
-            ele.css({
-                "left" : ileft, 
-                "top"  : itop
-            });
-            if (data.persist && container.container.length && typeof container.container.on == 'function') {
-                container.container.on('resize', function(){ 
-                    ele.css({
-                        "left" : Math.round( (($(this).outerWidth() || $(this).width())/2) - ((ele.outerWidth() || ele.width())/2) ) + "px", 
-                        "top"  : Math.round( (($(this).outerHeight() || $(this).height())/2) - ((ele.outerHeight() || ele.height())/2) ) + "px"
-                    });
-                });
-            }
-            return ele;
-        }
-
-        ele.css({
-            "margin-left" : ( (! data.horizontal)? Cast.cint(ele.css("margin-left")): ileft ),
-            "margin-top"  : ( (! data.vertical)?   Cast.cint(ele.css("margin-top")): itop )
-        });
-        if (data.persist && container.container.length && typeof container.container.on == 'function') {
-            container.container.on('resize', function(){ 
-                ele.css({
-                    "margin-left" : Math.round( (($(this).outerWidth() || $(this).width())/2) - ((ele.outerWidth() || ele.width())/2) ) + "px", 
-                    "margin-top"  : Math.round( (($(this).outerHeight() || $(this).height())/2) - ((ele.outerHeight() || ele.height())/2) ) + "px"
-                });
-            });
-        }
-        
-        return ele;
-    };
+{  
+    var k,
+        itop,
+        ileft,
+        pos,
+        data = {
+            parent     : false, //parent element selector to fit into
+            width      : 0,     //width to fit into
+            height     : 0,     //height to fit into
+            vertical   : true,
+            horizontal : true,
+            persist    : true
+        };
     
+    ele = Cast.cjquery(ele);
+    settings = Cast.cobject(settings);
+    
+    for (k in data) {    
+        data[k] = (typeof settings[k] != 'undefined')? settings[k] : data[k]; 
+    }
+    
+    container = Elements.getContainer(ele, data);
+    parent    = container.jq;
+    
+    if ( ! parent.length || (data.horizontal && ! data.vertical)) {
+        if (Cast.cint(container.width) && Cast.cint(container.height))
+            return Elements.centerArea(ele, container.width, container.height);
+        return ele.css({
+            "margin-left"    : "auto",
+            "margin-right"   : "auto",
+            "vertical-align" : "middle"
+        });
+    }
+    
+    if (data.persist)
+        return Elements.centerParentResize(ele, parent);
+    
+    return Elements.centerParent(ele, parent);
+};
+
+/**
+ * Center element in parent
+ * @param {jquery} jqe centered element
+ * @param {jquery} jqp parent container (usually window)
+ * @return {jquery} jqe
+ */
+Elements.centerParent = function(jqe, jqp)
+{
+    var pos = Cast.cstring(jqe.css("position"));
+    if ( pos == "absolute" || pos == "fixed")
+        return jqe.css({
+            "left" : Math.round( ((jqp.outerWidth() || jqp.width())/2) - ((jqe.outerWidth() || jqe.width())/2) ) + "px", 
+            "top"  : Math.round( ((jqp.outerHeight() || jqp.height())/2) - ((jqe.outerHeight() || jqe.height())/2) ) + "px"
+        });
+    return jqe.css({
+        "margin-left" : Math.round( ((jqp.outerWidth() || jqp.width())/2) - ((jqe.outerWidth() || jqe.width())/2) ) + "px", 
+        "margin-top"  : Math.round( ((jqp.outerHeight() || jqp.height())/2) - ((jqe.outerHeight() || jqe.height())/2) ) + "px"
+    });
+};
+
+/**
+ * Center element in height/width
+ * @param {jquery} jqe centered element
+ * @param {int} width
+ * @param {int} height
+ * @return {jquery} jqe
+ */
+Elements.centerArea = function(jqe, w, h)
+{
+    var pos = Cast.cstring(jqe.css("position"));
+    if ( pos == "absolute" || pos == "fixed")
+        return jqe.css({
+            "left" : Math.round( (w/2) - ((jqe.outerWidth() || jqe.width())/2) ) + "px", 
+            "top"  : Math.round( (h/2) - ((jqe.outerHeight() || jqe.height())/2) ) + "px"
+        });
+    return jqe.css({
+        "margin-left" : Math.round( (w/2) - ((jqe.outerWidth() || jqe.width())/2) ) + "px", 
+        "margin-top"  : Math.round( (h/2) - ((jqe.outerHeight() || jqe.height())/2) ) + "px"
+    });
+};
+
+/**
+ * Create an event to center parent on change
+ * @param {jquery} jqp parent container (usually window)
+ * @param {jquery} jqe centered element
+ * @return {jquery} jqe
+ */
+Elements.centerParentResize = function(jqe, jqp)
+{
+    jqe = Cast.jquery(jqe);
+    jqp = Cast.jquery(jqp);
+    Elements.centerParent(jqe, jqp);
+    
+    if (typeof jqp.on != 'function')
+        return jqp.bind('resize', function(){
+            Elements.centerParent(jqe, jqp);
+        });
+    
+    return jqp.on('resize', 
+        {"jqp":jqp,"jqe":jqe},
+        function(e){
+            Elements.centerParent(e.data.jqe, e.data.jqp);
+        }
+    );
+};
+
+Elements.startWindowResize = function(f)
+{
+    Elements.timeout = false;
+    $(window).resize(function() {
+        Elements.windowTime = new Date();
+        if (Elements.timeout === false) {
+            Elements.timeout = true;
+            setTimeout(Elements.windowResize, Elements.tick);
+        }
+    });
+};
+
+Elements.windowResize = function(e)
+{
+    if (new Date() - Elements.windowTime < Elements.tick) {
+        setTimeout(Elements.windowResize, Elements.tick);
+    } else {
+        Elements.timeout = false;
+        jQuery(window).trigger("Elements.Resize");
+    } 
+};
+/**
+ * Create an event to center parent on change
+ * @param {jquery} jqe element to resize
+ * @param {int} mxw max width
+ * @param {int} mxh max height
+ * @return {jquery} jqe
+ */
+Elements.sizeParentResize = function(jqe, mxw, mxh)
+{
+    var tw = $(window).width(),
+        th = $(window).height();
+    if (tw < mxw)
+        jqe.width(tw);
+    if (th < mxh)
+        jqe.height(th);
+    
+    if (typeof jqp.on != 'function')
+        return jqp.bind('resize', function(){
+            Elements.centerParent(jqe, jqp);
+        });
+    
+    return jqp.on('resize', 
+        {"jqp":jqp,"jqe":jqe},
+        function(e){
+            Elements.centerParent(e.data.jqe, e.data.jqp);
+        }
+    );
+};
+
 /**
  * When image functions are performed, image data is stored on the element
  * In the case of multiple elements, it always returns the data of the first
- * @param {jquery} img - the img jquery element
+ * @param {jquery} img - the jquery element
  * @param {string} [dataSet] - the subset of data to save
  * @param {json} [data] - the data to save
  * @return {json} the image data
  */
-Elements.elementData = function(img, set, newData)
-    {
-        if (typeof set == 'object') { 
-            newData = set;
-            set = "";
-        }
-        newData = Cast.cobject(newData); //assumed data is always object data
-        
+Elements.elementData = function(jqo, set, newData)
+{
+    var data = {};
+    jqo = Cast.cjquery(jqo);
+    if (typeof set == 'object') {
+        newData = set;
+        set = "default";
+    } else {
         set = Cast.cstring(set);
         if ( ! set )
             set = "default";
-        
-        img = Cast.cjquery(img);
-        if (img.length > 1)
-            img = img.get(0);
-        
-        if ( img.length ) {     
-            var data = Cast.cobject(img.data("Images"));
-            data[set] = Cast.cobject(data[set]);
-            jQuery.extend(data[set], newData);
-            img.data("Images", data);
-            return data[set];
-        }
-        return {};
-    };
+    }
+    Cast.cjson(newData);
+    
+    jqo.each(function(){
+        data = Cast.cjson(jqo.data(set));
+        jQuery.extend(data, newData);
+        jqo.data(set, data);
+    });
+    
+    return data;
+};
 
+/**
+ * Resizes image to new width/height all css units accepted
+ * @param {jquery} img - one img element
+ * @param {string/int} w - new width
+ * @param {string/int} h - new height
+ * @param {int} effect - speed to animate to new size (0 = instant)
+ * @return img object
+ */
+Elements.resize = function(img,w,h,effect)
+{
+    if ( Cast.isNumber(w) )
+        w = w+"px";
+    if ( Cast.isNumber(h) )
+        h = h+"px";
+    effect = Cast.cint(effect);
+    
+    if ( effect > 0 )
+        return img.animate({
+            "width"  : w,
+            "height" : h
+        }, effect);
+    
+    return img.css({
+        "width"  : w,
+        "height" : h
+    });
+};
 
 /**
  * Sets if image is loaded, defaults to setting loaded = true
@@ -286,11 +412,11 @@ Elements.elementData = function(img, set, newData)
  * @return this object
  */
 Images.setLoaded = function(img, b)
-    {
-        b = Cast.cboolean(b,true);
-        Cast.cjquery(img).data("loaded", b);
-        return this;
-    };
+{
+    b = Cast.cboolean(b,true);
+    Cast.cjquery(img).data("loaded", b);
+    return this;
+};
 
 /**
  * Determines if image is loaded
@@ -311,14 +437,14 @@ Images.isLoaded = function(img)
  */
 Images.loadImages = function(imgs)
     {
-        var imgs = Cast.cjquery(imgs);
+        imgs = Cast.cjquery(imgs);
         var that = this;
         
         return jQuery.Deferred(function(dfdpl){
             imgs.each(function(index, value){
                 that.loadImage(jQuery(value)).done(function(w,h,img){
                     if ( index >= (imgs.length-1) )
-                        dfdpl.resolve(img);
+                        dfdpl.resolve(imgs);
                 });
             });
             if ( ! imgs.length )
@@ -329,50 +455,43 @@ Images.loadImages = function(imgs)
 /**
  * Preloads one image element and gets the width and height of the original image
  * @param {jQuery} img - one jQuery img element
- * @return {jqXHR}
+ * @return {jqXHR} theImage.width, theImage.height, img, errorString
  */
 Images.loadImage = function(img)
-    {   
-        var that = this;
-        return jQuery.Deferred(function(dfdobj){
-            
-            //if the size is already calculated, just return that
-            var iData = Cast.cobject(Elements.elementData(img));
-            if ( ! (Cast.cint(iData.owidth) == 0 || Cast.cint(iData.oheight) == 0) ) {
-                dfdobj.resolve(iData.owidth, iData.oheight, img);
-                return this;
-            }
-            
-            //make sure image is loaded, then pull original image size
-            var theImage = new Image();
-            var src = Cast.cstring(img.attr("src"));
-            theImage.onload = function(){
-                Elements.elementData(img, {
-                    'owidth'  : theImage.width,
-                    'oheight' : theImage.height
-                });
-                that.setLoaded(img);
-                dfdobj.resolve(theImage.width, theImage.height, img);
-            };
-            theImage.onerror = function(event){
-                Elements.elementData(img, {
-                    'owidth'  : img.width(),
-                    'oheight' : img.height()
-                });
-                dfdobj.reject(img.width(), img.height(), img, "invalid src: "+src);
-            };
-            theImage.src = src;
-            if(theImage.complete && dfdobj.state == "pending"){
-                Elements.elementData(img, {
-                    'owidth'  : theImage.width,
-                    'oheight' : theImage.height
-                });
-                that.setLoaded(img);
-                dfdobj.resolve(theImage.width, theImage.height, img);
-            }
-            
-        }).promise();
-    };
+{
+    var that = this;
+    return jQuery.Deferred(function(dfdobj){
+        //make sure image is loaded, then pull original image size
+        img = Cast.cjquery(img);
+        var theImage = new Image(),
+            src = Cast.cstring(img.attr("src"));
+        theImage.onload = function(){
+            Elements.elementData(img, {
+                'owidth'  : theImage.width,
+                'oheight' : theImage.height
+            });
+            that.setLoaded(img);
+            dfdobj.resolve(theImage.width, theImage.height, img);
+        };
+        theImage.onerror = function(event){
+            Elements.elementData(img, {
+                'owidth'  : img.width(),
+                'oheight' : img.height()
+            });
+            dfdobj.reject(img.width(), img.height(), img, "invalid src: "+src);
+        };
+        theImage.src = src;
+        if(theImage.complete){
+            Elements.elementData(img, {
+                'owidth'  : theImage.width,
+                'oheight' : theImage.height
+            });
+            that.setLoaded(img);
+            dfdobj.resolve(theImage.width, theImage.height, img);
+        }
+        
+    }).promise();
+};
 
 /**
  * Depends on image being loaded
@@ -400,34 +519,6 @@ Images.getRatioH = function(img, targetW)
         if ( isNaN(rH) )
             return 0;
         return targetW*rH;
-    };
-
-/**
- * Resizes image to new width/height all css units accepted
- * @param {jquery} img - one img element
- * @param {string/int} w - new width
- * @param {string/int} h - new height
- * @param {int} effect - speed to animate to new size (0 = instant)
- * @return img object
- */
-Elements.resize = function(img,w,h,effect)
-    {
-        if ( Cast.isNumber(w) )
-            w = w+"px";
-        if ( Cast.isNumber(h) )
-            h = h+"px";
-        effect = Cast.cint(effect);
-        
-        if ( effect > 0 )
-            return img.animate({
-                "width"  : w,
-                "height" : h
-            }, effect);
-        
-        return img.css({
-            "width"  : w,
-            "height" : h
-        });
     };
 
 /**
@@ -570,4 +661,3 @@ Images.exists = function(url)
     }).promise();
 };
 
-})(jQuery);
