@@ -5,9 +5,9 @@
  */
 var Elements = {
     version : 3.4,
-    o       : [],
-    tick    : 200,
-    timeout : false
+    o       : [],    //stored jquery elements (attach id# to element)
+    tick    : 200,   //resize timer tick for 'afterresize' event
+    timeout : false  //performing resize
 }; //functions shared across all elements
 var Images = {
     version:1.2
@@ -279,65 +279,60 @@ Elements.centerArea = function(jqe, w, h)
  */
 Elements.centerParentResize = function(jqe, jqp)
 {
-    jqe = Cast.jquery(jqe);
-    jqp = Cast.jquery(jqp);
+    jqe = Cast.cjquery(jqe);
+    jqp = Cast.cjquery(jqp);
     Elements.centerParent(jqe, jqp);
-    
+
     if (typeof jqp.on != 'function')
         return jqp.bind('resize', function(){
             Elements.centerParent(jqe, jqp);
         });
-    
-    return jqp.on('resize', 
+
+    Elements.startAfterResizeEvent(jqp);
+    return jQuery(jqp).on('afterresize', 
         {"jqp":jqp,"jqe":jqe},
-        function(e){
+        function(e){console.log("trig triggered");
             Elements.centerParent(e.data.jqe, e.data.jqp);
         }
     );
 };
 
-Elements.startWindowResize = function(f)
+/**
+ * afterresize trigger events
+ * startAfterResizeEvent(targetElement);
+ */
+Elements.startAfterResizeEvent = function(jqp)
 {
-    if (Elements.startWindowResizeOn != 'undefined')
+    if (typeof Elements.startAfterResizeEventOn != 'undefined') //run only once - should probably force a run at startup
         return;
-    Elements.startWindowResizeOn = true;
+    if (typeof jqp == 'undefined')
+        jqp = window;
+    Elements.startAfterResizeEventOn = true;
     Elements.timeout = false;
-    $(window).resize(function() {
-        Elements.windowTime = new Date();
-        if (Elements.timeout === false) {
-            Elements.timeout = true;
-            setTimeout(Elements.windowResize, Elements.tick);
+
+    $(jqp).on('resize', 
+        {"jqp":jqp},
+        function() {
+            Elements.windowTime = new Date();
+            if (Elements.timeout === false) {
+                Elements.timeout = true;
+                setTimeout(Elements.afterResize, Elements.tick);
+            }
         }
-    });
+    );
 };
 
-Elements.windowResize = function(e)
+/**
+ * triggers "afterresize" event
+ */
+Elements.afterResize = function(e)
 {
     if (new Date() - Elements.windowTime < Elements.tick) {
-        setTimeout(Elements.windowResize, Elements.tick);
+        setTimeout(Elements.afterResize, Elements.tick);
     } else {
-        Elements.timeout = false;
-        jQuery(window).trigger("Elements.Resize");
+        Elements.timeout = false; console.log("set trigger");
+        jQuery(window).trigger("afterresize");
     } 
-};
-/**
- * Create an event to center parent on change
- * @param {jquery} jqe element to resize
- * @param {int} mxw max width
- * @param {int} mxh max height
- * @return {jquery} jqe
- */
-Elements.sizeParentResize = function(jqe, mxw, mxh)
-{
-    Elements.startWindowResize();
-    jQuery(window).on('Elements.Resize', function(){
-        var tw = $(window).width(),
-            th = $(window).height();
-        if (tw < mxw)
-            jqe.width(tw);
-        if (th < mxh)
-            jqe.height(th);
-    });
 };
 
 /**

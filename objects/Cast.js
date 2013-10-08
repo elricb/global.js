@@ -5,7 +5,7 @@
  */
 var Cast = {
     //version
-    v:3.1,
+    v:3.2,
     /**
      * convert anything to integer
      * @param {mixed} [i] - variable to convert
@@ -14,9 +14,9 @@ var Cast = {
      */
     cint : function(i,df)
     {
-        if ( typeof df == 'undefined' ) 
+        if ( typeof df == 'undefined' )
             df = 0;
-            
+        
         if ( typeof i == 'undefined' )
             return df;
         i = parseInt(i,10);
@@ -32,7 +32,7 @@ var Cast = {
      */
     cfloat : function(i,df)
     {
-        if ( typeof df == 'undefined' ) 
+        if ( typeof df == 'undefined' )
             df = 0;
         if ( typeof i == 'undefined' )
             return df;
@@ -53,7 +53,7 @@ var Cast = {
         if (typeof v == 'object' && v) //null evaluates as object
             if ( v.constructor == Number )
                 return true;
-        return false;                
+        return false;
     },
     /**
      * convert anything to object
@@ -72,13 +72,45 @@ var Cast = {
     /**
      * check if is object
      * @param {mixed} v - value to check
-     * @return {bool} 
+     * @return {bool}
      */
     isObject : function(v)
     {
         if (typeof v == "object" && v) //null validates as object
             return true;
-        return false;                
+        return false;
+    },
+    /**
+     * convert anything to array
+     * @param {mixed} [o] - variable to convert
+     * @param {mixed} [df] - default to set ([] if omitted)
+     * @return {Array} or default on error
+     */
+    carray : function(o,df)
+    {
+        if ( typeof df == 'undefined' )
+            df = [];
+        if ( typeof o == 'undefined' )
+            return df;
+        if (this.isArray(o))
+            return o;
+        if (typeof o.toArray == "function")
+            return o.toArray();
+        return [o];
+    },
+    /**
+     * check if is array
+     * @param {mixed} v - value to check
+     * @return {boolean} 
+     */
+    isArray : function(v)
+    {
+        if (typeof v == "array")
+            return true;
+        if (typeof v == 'object' && v)
+            if ( v.constructor == Array )
+                return true;
+        return false;
     },
     /**
      * convert anything to string
@@ -88,7 +120,7 @@ var Cast = {
      */
     cstring : function(s,df)
     {
-        if ( typeof df == 'undefined' ) 
+        if ( typeof df == 'undefined' )
             df = "";
         if ( typeof s == 'undefined' )
             return df;
@@ -106,7 +138,7 @@ var Cast = {
         if (typeof v == 'object' && v)
             if ( v.constructor == String )
                 return true;
-        return false;                
+        return false;
     },
     /**
      * convert anything to boolean
@@ -134,7 +166,7 @@ var Cast = {
         if (typeof v == 'object' && v)
             if ( v.constructor == Boolean )
                 return true;
-        return false;                
+        return false;
     },
     /**
      * converts to json
@@ -199,14 +231,14 @@ var Cast = {
      */
     cjquery : function(jq,df)
     {
-        if ( typeof df == 'undefined' ) 
+        if ( typeof df == 'undefined' )
             df = jQuery();
         if ( typeof jq == 'undefined' )
             return df;
         if ( ! jq )
             return df;
         return jQuery(jq);
-    }, 
+    },
     /**
      * check if is jquery
      * @return {boolean} 
@@ -216,7 +248,7 @@ var Cast = {
         if (typeof v == 'object' && v)
             if ( v.jquery )
                 return true;
-        return false;                
+        return false;
     },
     /**
      * convert anything to date
@@ -226,7 +258,7 @@ var Cast = {
      */
     cdate : function(v,df)
     {
-        if ( typeof df == 'undefined' ) 
+        if ( typeof df == 'undefined' )
             df = Date();
         if ( typeof v == 'undefined' )
             return df;
@@ -234,7 +266,7 @@ var Cast = {
         if ( isNaN(v) )
             return df;
         return v;
-    }, 
+    },
     /**
      * check if is Date
      * @return {boolean} 
@@ -244,7 +276,7 @@ var Cast = {
         if (typeof v == 'object' && v) //null evaluates as object
             if ( v.constructor == Date )
                 return true;
-        return false;                
+        return false;
     },
     /**
      * convert undefined to a default value
@@ -254,7 +286,7 @@ var Cast = {
      */
     cdefault : function(v,df)
     {
-        if ( typeof df == 'undefined' ) 
+        if ( typeof df == 'undefined' )
             df = null;
         if ( typeof v == 'undefined' )
             return df;
@@ -262,7 +294,7 @@ var Cast = {
     },
     /**
      * check if is function
-     * @return {boolean} 
+     * @return {boolean}
      */
     isFunction : function(v)
     {
@@ -271,7 +303,26 @@ var Cast = {
         if (typeof v == 'object' && v)
             if ( v.constructor == Function )
                 return true;
-        return false;                
+        return false;
+    },
+    /**
+     * safely traverse down object tree
+     * @param {mixed} 0 the base object
+     * @param {string} 1+ chain of sub objects
+     * @return null on error
+     */
+    ctree : function()
+    {
+        if (typeof arguments == 'undefined' || !arguments.length)
+            return null;
+        if (arguments.length == 1)
+            return arguments[0];
+        if (typeof arguments[0] == "object" && arguments[1] in arguments[0]) {
+            a = [arguments[0][arguments[1]]];
+            for(var i=2; i<arguments.length;i++)
+                a.push(arguments[i]);
+            return this.ctree.apply(this,a);
+        }
+        return null;
     }
 };
-
