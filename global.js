@@ -5,7 +5,6 @@
  * All code should have safe wrappers and error fallback to ensure no script failures under any conditions (versions, third-party, browsers)
  * Uses psudo minification (class based LF) for live error pin-pointing
  *************************************** */
-
 /**
  * Safe/Defaults variable casting and type detection
  * from: objects/Cast.js
@@ -34,27 +33,23 @@ var Cast={
     isFunction:function(b){return"function"==typeof b||"object"==typeof b&&b&&b.constructor==Function?!0:!1},
     ctree:function(){if("undefined"==typeof arguments||!arguments.length)return null;if(1==arguments.length)return arguments[0];if("object"==typeof arguments[0]&&arguments[1]in arguments[0]){a=[arguments[0][arguments[1]]];for(var b=2;b<arguments.length;b++)a.push(arguments[b]); return this.ctree.apply(this,a)}return null}
 };
-
 /**
  * Ensure base objects for older browsers (for lightweight sake the functionality isn't recreated, just made not to error)
  * window.console.log/console.log
  * JSON.stringify/JSON.parse
  * jQueryVersion {float}
  */
-window.console = console = Cast.cobject(window.console);
+window.console     = console     = Cast.cobject(window.console);
 window.console.log = console.log =  (Cast.isFunction(window.console.log))? window.console.log: function(){};
-
 var JSON;JSON||(JSON={});
     JSON.stringify = (Cast.isFunction(JSON.stringify))?JSON.stringify: JSON.stringify = Cast.csjson;
     JSON.parse     = (Cast.isFunction(JSON.parse))?JSON.parse: JSON.parse = Cast.cjson;
-
 var jQueryVersion = 0;
 if ( typeof jQuery == 'function' ) {
     jQueryVersion = jQuery.fn.jquery;
     jQueryVersion = jQueryVersion.split(".").slice(0,2).join("."); //only want the first increment e.g. 1.7.55 = 1.7
     jQueryVersion = Cast.cfloat(jQueryVersion,0);
 }
-
 /**
  * Parse the URL
  * dependancies: javascript 1.0, w3c DOM 1.0, Cast
@@ -78,8 +73,6 @@ var URL={
     setQuery  : function(a,b){a=Cast.cjson(a);b=Cast.isString(b)?b:this.query;var c=b.split("&"),e={},d;for(d in c)(k2=Cast.cstring(c[d].split("=")[0]))&&(e[k2]=Cast.cstring(c[d].split("=")[1]));for(d in a)e[d]=Cast.cstring(a[d]);if("function"==typeof jQuery)return jQuery.param(e);c="";for(d in e)c+="&"+d+"="+e[d];return c.replace(/^&/,"");}
 };
 URL.setValues();
-
-
 /**
  * Legacy cookie functions
  * dependancies: URL
@@ -100,11 +93,8 @@ function getCookie(name)  {
             return c_value;
         }
     }
-
     return null;
 }
-
-
 /**
  * Element and Image functions
  * From: objects/Elements.js
@@ -119,7 +109,6 @@ var Elements = {
 var Images = {
     version:1.2
 };
-
 if (typeof jQuery=='function') {
     jQuery.fn.fitIn=function(a){return Images.fitImages(this,a)};
     jQuery.fn.preload=function(){return Images.loadImages(this)};
@@ -154,7 +143,6 @@ if (typeof jQuery=='function') {
     Images.fitImages=function(a,b){a=Cast.cjquery(a);var c=this;return jQuery.Deferred(function(d){a.each(function(e,f){c.fitImage(jQuery(f),b).done(function(b,c,f){e>=a.length-1&&d.resolve(f)})});a.length||d.reject(a)}).promise()};
     Images.fitImage=function(a,b){var c=this;return this.loadImage(a).done(function(a,e,f){data={parent:!1,width:0,height:0,speed:0,bound:!0};jQuery.extend(data,Cast.cobject(b));Elements.elementData(f,"container",data);a=Elements.getContainer(f,data);c.fitInArea(f,a.width,a.height,data.speed,!data.bound)})};
     Images.exists=function(a){return jQuery.Deferred(function(b){"undefined"!=typeof a&&a||b.reject(b,"fail","blank url","");jQuery("<img src='"+a+"' />").load(function(){b.resolve(a,"success",b)}).error(function(){b.reject(b,"fail","error loading image",a)})}).promise()};
-
 /**
  * User location functions
  * dependancies:  jQuery 1.6+, Cast, URL, Images
@@ -173,8 +161,6 @@ var Location={
     getImage        : function(a){(a= Cast.cstring(a))||(a="1280x720");return $.Deferred(function(b){Location.getLocation().done(function(c,d,f){var e="http://pod."+URL.domain+"/geo/"+a+"/";Images.exists(e+c.sel_locCity+".jpg").done(function(a){b.resolve(a,"city",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locState+".jpg").done(function(a){b.resolve(a,"state",c)}).fail(function(a,d,f){Images.exists(e+c.sel_locCountry+".jpg").done(function(a){b.resolve(a,"country",c)}).fail(function(a,d,e){b.reject(b,"failed","image from detect location could not be resolved", c)})})})})}).promise()},
     imageTest       : function(){Location.getImage().done(function(a,b){console.log("location image loaded("+b+"): "+a)}).fail(function(a,b,c){console.log("location image error: "+c)});return this}
 };
-
-
 /*  SWFObject v2.2 <http://code.google.com/p/swfobject/> 
     is released under the MIT License <http://www.opensource.org/licenses/mit-license.php> 
 */
