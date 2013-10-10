@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Test Global.js</title>
+
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script src="../objects/Cast.js"></script>
+<!script src="../objects/Cast.min.js"><!/script>
+
+<script>
+    $(document).ready(function(){
+        d = $("#content");
+        
+        
+        d.append("<div>undefined: cint("+Cast.cint()+")</div>");
+        test = 3.1;
+        d.append("<div>"+test+": cint("+Cast.cint(test)+")</div>");
+        test = "a";
+        d.append("<div>"+test+": cint("+Cast.cint(test)+")</div>");
+        test = 3.2;
+        d.append("<div>"+test+": cfloat("+Cast.cfloat(test)+")</div>");
+        test = 3.2;
+        d.append("<div>"+test+": isNumber("+Cast.isNumber(test)+")</div>");
+        test = new Number();
+        d.append("<div>"+test+": isNumber("+Cast.isNumber(test)+")</div>");
+        test = new Number(2);
+        d.append("<div>"+test+": isNumber("+Cast.isNumber(test)+")</div>");
+        test = null;
+        d.append("<div>"+test+": isNumber("+Cast.isNumber(test)+")</div>");
+        test = "a";
+        d.append("<div>"+test+": isNumber("+Cast.isNumber(test)+")</div>");
+        d.append("<div>undefined: isNumber("+Cast.isNumber()+")</div>");
+        test = {};
+        d.append("<div>"+test+": cobject("+Cast.cobject(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": isObject("+Cast.isObject(test)+")</div>");
+        test = [];
+        d.append("<div>"+test+": carray("+Cast.carray(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": isArray("+Cast.isArray(test)+")</div>");
+        test = [];
+        d.append("<div>"+test+": cstring("+Cast.cstring(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": isString("+Cast.isString(test)+")</div>");
+        test = [];
+        d.append("<div>"+test+": cboolean("+Cast.cboolean(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": isBoolean("+Cast.isBoolean(test)+")</div>");
+        test = [];
+        d.append("<div>"+typeof test+": cjson("+Cast.cjson(typeof test)+")</div>");
+        test = {a:1,b:2};
+        d.append("<div>"+test+": cjson("+Cast.cjson(typeof test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": csjson("+Cast.csjson(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": cjquery("+Cast.cjquery(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": isJquery("+Cast.isJquery(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": cdate("+Cast.cdate(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": isDate("+Cast.isDate(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": cdefault("+Cast.cdefault(test,"a")+")</div>");
+        test = {};
+        d.append("<div>"+test+": isFunction("+Cast.isFunction(test)+")</div>");
+        test = {};
+        d.append("<div>"+test+": ctree("+Cast.ctree(test)+")</div>");
+    });
+    
+</script>
+
+</head>
+<body>
+    
+    <div id="content">
+        
+    </div>
+    
+</body>
+</html>
