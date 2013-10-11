@@ -70,7 +70,6 @@ Elements.get = function(ie) {
         return Elements.o[ie];
     return jQuery();
 };
-
 /**
  * Assign custom images to replace checkbox
  * compatibility:  jQuery 1.0+, 
@@ -122,7 +121,6 @@ Elements.checkBox = function(checkBox, imgOn, imgOff, bOn)
     
     return customBox;
 };
-
 /**
  * With attributes href and target, converts any element into an anchor (e.g. <div href='link.html'></div>)
  * @param {jquery/string} s - selector to convert elements into links (tracks clicks)
@@ -321,7 +319,6 @@ Elements.startAfterResizeEvent = function(jqp)
         }
     );
 };
-
 /**
  * triggers "afterresize" event
  */
@@ -334,7 +331,6 @@ Elements.afterResize = function(e)
         jQuery(window).trigger("afterresize");
     } 
 };
-
 /**
  * When image functions are performed, image data is stored on the element
  * In the case of multiple elements, it always returns the data of the first
@@ -365,35 +361,39 @@ Elements.elementData = function(jqo, set, newData)
     
     return data;
 };
-
 /**
  * Resizes image to new width/height all css units accepted
- * @param {jquery} img - one img element
+ * @param {jquery} jqo - one jquery object
  * @param {string/int} w - new width
  * @param {string/int} h - new height
  * @param {int} effect - speed to animate to new size (0 = instant)
- * @return img object
+ * @return {jQuery} object - use "afterresize" event
  */
-Elements.resize = function(img,w,h,effect)
+Elements.resize = function(jqo,w,h,effect)
 {
     if ( Cast.isNumber(w) )
-        w = w+"px";
+        w = Cast.cint(w)+"px";
     if ( Cast.isNumber(h) )
-        h = h+"px";
+        h = Cast.cint(h)+"px";
+    if (!w)
+        w = jqo.width()+"px";
+    if (!h)
+        h = jqo.height()+"px";
     effect = Cast.cint(effect);
-    
+
     if ( effect > 0 )
-        return img.animate({
+        return jqo.stop().animate({
             "width"  : w,
             "height" : h
-        }, effect);
-    
-    return img.css({
+        }, effect, function(){
+            jqo.trigger("afterresize");
+        });
+
+    return jqo.css({
         "width"  : w,
         "height" : h
-    });
+    }).trigger("afterresize");
 };
-
 /**
  * Sets if image is loaded, defaults to setting loaded = true
  * @param {jQuery/string} img - selector or jquery img element, assumes one element
@@ -406,41 +406,38 @@ Images.setLoaded = function(img, b)
     Cast.cjquery(img).data("loaded", b);
     return this;
 };
-
 /**
  * Determines if image is loaded
  * @param {jQuery/string} img - selector or jquery img element, assumes one element
  * @return {boolean}
  */
 Images.isLoaded = function(img)
-    {
-        return Cast.cboolean(
-            Cast.cjquery(img).data("loaded")
-        );
-    };
-
+{
+    return Cast.cboolean(
+        Cast.cjquery(img).data("loaded")
+    );
+};
 /**
  * Prelaods many image elements
  * @param {jQuery/string} imgs - one to many jQuery img elements (can be jQuery element or selector string)
  * @return {jqXHR}
  */
 Images.loadImages = function(imgs)
-    {
-        imgs = Cast.cjquery(imgs);
-        var that = this;
-        
-        return jQuery.Deferred(function(dfdpl){
-            imgs.each(function(index, value){
-                that.loadImage(jQuery(value)).done(function(w,h,img){
-                    if ( index >= (imgs.length-1) )
-                        dfdpl.resolve(imgs);
-                });
-            });
-            if ( ! imgs.length )
-                dfdpl.reject(imgs, "no image elements to preload");
-        }).promise();
-    };
+{
+    imgs = Cast.cjquery(imgs);
+    var that = this;
     
+    return jQuery.Deferred(function(dfdpl){
+        imgs.each(function(index, value){
+            that.loadImage(jQuery(value)).done(function(w,h,img){
+                if ( index >= (imgs.length-1) )
+                    dfdpl.resolve(imgs);
+            });
+        });
+        if ( ! imgs.length )
+            dfdpl.reject(imgs, "no image elements to preload");
+    }).promise();
+};
 /**
  * Preloads one image element and gets the width and height of the original image
  * @param {jQuery} img - one jQuery img element
@@ -481,35 +478,32 @@ Images.loadImage = function(img)
         
     }).promise();
 };
-
 /**
  * Depends on image being loaded
  * @param {jquery} img - one img element
  * @return {int} the aspect ratio correct width in pixels
  */
 Images.getRatioW = function(img, targetH)
-    {
-        var iData = Cast.cobject(Elements.elementData(img));
-        var rW = Cast.cint(iData['owidth'])/Cast.cint(iData['oheight']);
-        if ( isNaN(rW) )
-            return 0; 
-        return targetH*rW;
-    };
-
+{
+    var iData = Cast.cobject(Elements.elementData(img));
+    var rW = Cast.cint(iData['owidth'])/Cast.cint(iData['oheight']);
+    if ( isNaN(rW) )
+        return 0; 
+    return targetH*rW;
+};
 /**
  * Depends on image being loaded
  * @param {jquery} img - one img element
  * @return {int} the aspect ratio correct height in pixels
  */
 Images.getRatioH = function(img, targetW)
-    {
-        var iData = Cast.cobject(Elements.elementData(img));
-        var rH = Cast.cint(iData['oheight'])/Cast.cint(iData['owidth']);
-        if ( isNaN(rH) )
-            return 0;
-        return targetW*rH;
-    };
-
+{
+    var iData = Cast.cobject(Elements.elementData(img));
+    var rH = Cast.cint(iData['oheight'])/Cast.cint(iData['owidth']);
+    if ( isNaN(rH) )
+        return 0;
+    return targetW*rH;
+};
 /**
  * Resizes image to new width and aspect ratio height
  * @param {jquery} img - one img element
@@ -518,15 +512,14 @@ Images.getRatioH = function(img, targetW)
  * @return img object
  */
 Images.resizeW = function(img, targetW, effect)
-    {
-        return Elements.resize(
-            img,
-            targetW,
-            this.getRatioH(img,targetW),
-            effect
-        );
-    };
-
+{
+    return Elements.resize(
+        img,
+        targetW,
+        this.getRatioH(img,targetW),
+        effect
+    );
+};
 /**
  * Resizes image to new height and aspect ratio width
  * @param {jquery} img - one img element
@@ -535,15 +528,14 @@ Images.resizeW = function(img, targetW, effect)
  * @return img object
  */
 Images.resizeH = function(img, targetH, effect)
-    {
-        return Elements.resize(
-            img,
-            this.getRatioW(img,targetH),
-            targetH,
-            effect
-        );
-    };
-
+{
+    return Elements.resize(
+        img,
+        this.getRatioW(img,targetH),
+        targetH,
+        effect
+    );
+};
 /**
  * size an image inside a container (maintaining aspect ratio)
  * @param {jquery} img the image element to fit
@@ -553,11 +545,10 @@ Images.resizeH = function(img, targetH, effect)
  * @return {Images} this
  */
 Images.fitInParent = function(img, container, speed, unbound)
-    {
-        container = Elements.getContainer(img, container);
-        return this.fitInArea(img, container.width, container.height, speed, unbound);
-    };
-
+{
+    container = Elements.getContainer(img, container);
+    return this.fitInArea(img, container.width, container.height, speed, unbound);
+};
 /**
  * size an image inside a width and height (maintaining aspect ratio)
  * @param {jquery} img the image element to fit
@@ -567,15 +558,13 @@ Images.fitInParent = function(img, container, speed, unbound)
  * @return {Images} this
  */
 Images.fitInArea = function(img,w,h,speed,unbound)
-    {
-        unbound = Cast.cboolean(unbound); //false: fit entire image in container, true: fit smallest length to container  
-        
-        if ( unbound == (Math.abs(img.width()-w) < Math.abs(img.height()-h)) ) //largest side in comparison to container
-            return this.resizeW(img,w,speed);
-        return this.resizeH(img,h,speed);
-    };
-
-
+{
+    unbound = Cast.cboolean(unbound); //false: fit entire image in container, true: fit smallest length to container  
+    
+    if ( unbound == (Math.abs(img.width()-w) < Math.abs(img.height()-h)) ) //largest side in comparison to container
+        return this.resizeW(img,w,speed);
+    return this.resizeH(img,h,speed);
+};
 /**
  * resize images based on container
  * @param {jQuery/string} selector - one to many jquery img elements
@@ -600,7 +589,6 @@ Images.fitImages = function(imgs, options)
         
     }).promise();
 };
-
 /**
  * resize an image based on container
  * @param {jQuery/string} selector - one jquery img element
@@ -626,7 +614,6 @@ Images.fitImage = function(img, options)
         that.fitInArea(img, container.width, container.height, data.speed, !data.bound);
     });
 };
-
 /**
  * Preload/verify image url
  * @param {string} url full image url

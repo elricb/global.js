@@ -1,0 +1,29 @@
+<script>
+function wrap(f){
+    var b = {
+        doneF : function(){},
+        done : function(f){
+            console.log("step3" + f);
+            this.doneF = f;
+        }
+    };
+    var o = {
+        resolve : function(a) {
+            window.setTimeout(function(){
+                console.log("step2" + b.doneF);
+                b.doneF(a);
+            },4);
+        }
+    };
+    
+    f(o);
+    return b;
+}
+wrap(function(dfd){
+    console.log("step1");
+    dfd.resolve("a");
+}).done(function(g){
+    console.log("step4");
+});
+
+</script>
