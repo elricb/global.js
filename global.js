@@ -1,7 +1,7 @@
 /** ***********************************
  * global.js
  * Recommend compliance with  Standard ECMA-262 3rd Edition - December 1999 (http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf)
- * Should exist in compliance with IE7+, NN3+, C1+
+ * Should exist in compliance with IE6+, NN3+, C1+
  * All code should have safe wrappers and error fallback to ensure no script failures under any conditions (versions, third-party, browsers)
  * Uses psudo minification (class based LF) for live error pin-pointing
  *************************************** */
@@ -11,13 +11,13 @@
  * dependancies: javascript 1.0
  */
 var Cast={
-    v:3.2,
+    v:3.3,
     cint:function(b,c){"undefined"==typeof c&&(c=0);if("undefined"==typeof b)return c;b=parseInt(b,10);return isNaN(b)?c:b},
     cfloat:function(b,c){"undefined"==typeof c&&(c=0);if("undefined"==typeof b)return c;b=parseFloat(b,10);return isNaN(b)?c:b},
     isNumber:function(b){return"number"==typeof b||"object"==typeof b&&b&&b.constructor==Number?!0:!1},
     cobject:function(b,c){"undefined"==typeof c&&(c={});return"object"==typeof b&&b?b:c},
     isObject:function(b){return"object"==typeof b&&b?!0:!1},
-    carray:function(b, c){"undefined"==typeof c&&(c=[]);return"undefined"==typeof b?c:this.isArray(b)?b:"function"==typeof b.toArray?b.toArray():[b]},
+    carray:function(a, b){"undefined"==typeof b&&(b=[]);if("undefined"==typeof a)return b;if(this.isArray(a))return a;if("function"==typeof a.toArray)return a.toArray();if("object"==typeof a.toArray){b=[];for(var c in a)b.push(a[c]);return b}return[a]},
     isArray:function(b){return"array"==typeof b||"object"==typeof b&&b&&b.constructor==Array?!0:!1},
     cstring:function(b,c){"undefined"==typeof c&&(c="");return"undefined"==typeof b?c:b+""},
     isString:function(b){return"string"==typeof b||"object"==typeof b&&b&&b.constructor==String?!0:!1},

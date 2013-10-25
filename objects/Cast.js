@@ -96,6 +96,12 @@ var Cast = {
             return o;
         if (typeof o.toArray == "function")
             return o.toArray();
+        if (typeof o.toArray == "object") {
+            df = [];
+            for(var i in o)
+                df.push(o[i]);
+            return df;
+        }
         return [o];
     },
     /**
