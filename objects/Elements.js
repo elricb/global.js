@@ -4,7 +4,7 @@
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.4,
+    version : 3.5,
     o       : [],    //stored jquery elements (attach id# to element)
     tick    : 200,   //resize timer tick for 'afterresize' event
     timeout : false  //performing resize
@@ -362,6 +362,30 @@ Elements.elementData = function(jqo, set, newData)
     return data;
 };
 /**
+ * Resizes all matches to the largest dimensions
+ * @param {jquery} jqo - many jquery objects
+ * @return {jquery} jqo - .length = 0 on error
+ */
+Elements.unifyDimensions = function(jqo)
+{
+    jqo = Cast.cjquery(jqo);
+    maxw = 0;
+    maxh = 0;
+    jqo.each(function(){
+        ajqo = $(this);
+        if (ajqo.width() > maxw)
+            maxw = ajqo.width();
+        if (ajqo.height() > maxh)
+            maxh = ajqo.height();
+    });
+    jqo.each(function(){
+        ajqo = $(this);
+        ajqo.width(maxw);
+        ajqo.height(maxh);
+    });
+    return jqo;
+};
+/**
  * Resizes image to new width/height all css units accepted
  * @param {jquery} jqo - one jquery object
  * @param {string/int} w - new width
@@ -635,5 +659,41 @@ Images.exists = function(url)
                 tdf.reject(tdf,"fail","error loading image", url);
             });
     }).promise();
+};
+/**
+ * Load svg image when supported
+ * If tag type = img, uses src.  Otherwise uses background-image.
+ * @param {string/jquery} jqo - element(s) to swap
+ * @param {string} svg - svg source (if omitted, use tag svg)
+ */
+Images.svg = function(jqo, svg)
+{
+    jqo = Cast.cjquery(jqo);
+    svg = Cast.cstring(svg);
+    if (! Images.svgSupported())
+        return jqo;
+    jqo.each(function(){
+        var ajqo = $(this);
+        if (! svg)
+            svg = Cast.cstring(ajqo.attr("svg"));
+        if (ajqo.prop("tagName") == "img")
+            ajqo.attr("src", svg);
+        else
+            ajqo.attr("background-image", "url("+svg+")");
+    });
+    return jqo;
+};
+/**
+ * Checks for svg support
+ * @return {boolean}
+ */
+Images.svgSupported = function()
+{
+    if (typeof Images.bSvgSupported != "undefined")
+        return Images.bSvgSupported;
+    var img = document.createElement('img');
+    img.setAttribute('src','data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNzUiIGhlaWdodD0iMjc1Ij48L3N2Zz4%3D');
+    Images.bSvgSupported = img.complete;
+    return Images.bSvgSupported;
 };
 

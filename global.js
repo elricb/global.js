@@ -101,19 +101,20 @@ function getCookie(name)  {
  * dependancies:  jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.4,
-    o       : [],
-    tick    : 200,
-    timeout : false
-};
+    version : 3.5,
+    o       : [],    //stored jquery elements (attach id# to element)
+    tick    : 200,   //resize timer tick for 'afterresize' event
+    timeout : false  //performing resize
+}; //functions shared across all elements
 var Images = {
     version:1.2
-};
+};   //functions shared across all images
+
 if (typeof jQuery=='function') {
     jQuery.fn.fitIn=function(a){return Images.fitImages(this,a)};
     jQuery.fn.preload=function(){return Images.loadImages(this)};
     jQuery.fn.resize=function(a,b,c){return Elements.resize($(this),a,b,c)};
-    jQuery.fn.center=function(a){return Elements.center($(this),a)}; 
+    jQuery.fn.center=function(a){return Elements.center($(this),a)};
 }
     Elements.isHTMLNode=function(a){return"object"===typeof Node?a instanceof Node:a&&"object"===typeof a&&"number"===typeof a.nodeType&&"string"===typeof a.nodeName};
     Elements.isHTMLElement=function(a){return"object"===typeof HTMLElement?a instanceof HTMLElement:a&&"object"===typeof a&&null!==a&&1===a.nodeType&&"string"===typeof a.nodeName};
@@ -129,6 +130,7 @@ if (typeof jQuery=='function') {
     Elements.centerParentResize=function(a,b){a=Cast.cjquery(a);b=Cast.cjquery(b);Elements.centerParent(a,b);if("function"!=typeof b.on)return b.bind("resize",function(){Elements.centerParent(a,b)});Elements.startAfterResizeEvent(b);return jQuery(b).on("afterresize",{jqp:b,jqe:a},function(a){console.log("trig triggered");Elements.centerParent(a.data.jqe,a.data.jqp)})};
     Elements.startAfterResizeEvent=function(a){"undefined"==typeof Elements.startAfterResizeEventOn&&("undefined"==typeof a&&(a=window),Elements.startAfterResizeEventOn=!0,Elements.timeout=!1,$(a).on("resize",{jqp:a},function(){Elements.windowTime=new Date;!1===Elements.timeout&&(Elements.timeout=!0,setTimeout(Elements.afterResize,Elements.tick))}))};
     Elements.afterResize=function(a){new Date-Elements.windowTime<Elements.tick?setTimeout(Elements.afterResize,Elements.tick):(Elements.timeout=!1,console.log("set trigger"),jQuery(window).trigger("afterresize"))};Elements.elementData=function(a,b,c){var d={};a=Cast.cjquery(a);"object"==typeof b?(c=b,b="default"):(b=Cast.cstring(b))||(b="default");Cast.cjson(c);a.each(function(){d=Cast.cjson(a.data(b));jQuery.extend(d,c);a.data(b,d)});return d};
+    Elements.unifyDimensions=function(a){a=Cast.cjquery(a);maxh=maxw=0;a.each(function(){ajqo=$(this);ajqo.width()>maxw&&(maxw=ajqo.width());ajqo.height()>maxh&&(maxh=ajqo.height())});a.each(function(){ajqo=$(this);ajqo.width(maxw);ajqo.height(maxh)});return a};
     Elements.resize=function(d,a,b,c){Cast.isNumber(a)&&(a+="px");Cast.isNumber(b)&&(b+="px");c=Cast.cint(c);return 0<c?d.animate({width:a,height:b},c,function(a){jQuery(a.target).trigger("afterresize")}):d.css({width:a,height:b}).trigger("afterresize")};
     Images.setLoaded=function(a,b){b=Cast.cboolean(b,!0);Cast.cjquery(a).data("loaded",b);return this};
     Images.isLoaded=function(a){return Cast.cboolean(Cast.cjquery(a).data("loaded"))};
@@ -143,6 +145,8 @@ if (typeof jQuery=='function') {
     Images.fitImages=function(a,b){a=Cast.cjquery(a);var c=this;return jQuery.Deferred(function(d){a.each(function(e,f){c.fitImage(jQuery(f),b).done(function(b,c,f){e>=a.length-1&&d.resolve(f)})});a.length||d.reject(a)}).promise()};
     Images.fitImage=function(a,b){var c=this;return this.loadImage(a).done(function(a,e,f){data={parent:!1,width:0,height:0,speed:0,bound:!0};jQuery.extend(data,Cast.cobject(b));Elements.elementData(f,"container",data);a=Elements.getContainer(f,data);c.fitInArea(f,a.width,a.height,data.speed,!data.bound)})};
     Images.exists=function(a){return jQuery.Deferred(function(b){"undefined"!=typeof a&&a||b.reject(b,"fail","blank url","");jQuery("<img src='"+a+"' />").load(function(){b.resolve(a,"success",b)}).error(function(){b.reject(b,"fail","error loading image",a)})}).promise()};
+    Images.svg=function(a,b){a=Cast.cjquery(a);b=Cast.cstring(b);if(!Images.svgSupported())return a;a.each(function(){var a=$(this);b||(b=Cast.cstring(a.attr("svg")));"img"==a.prop("tagName")?a.attr("src",b):a.attr("background-image","url("+b+")")});return a};
+    Images.svgSupported=function(){if("undefined"!=typeof Images.bSvgSupported)return Images.bSvgSupported;var a=document.createElement("img");a.setAttribute("src","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNzUiIGhlaWdodD0iMjc1Ij48L3N2Zz4%3D");Images.bSvgSupported=a.complete;return Images.bSvgSupported};
 /**
  * User location functions
  * dependancies:  jQuery 1.6+, Cast, URL, Images
