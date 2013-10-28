@@ -4,7 +4,7 @@
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.5,
+    version : 3.6,
     o       : [],    //stored jquery elements (attach id# to element)
     tick    : 200,   //resize timer tick for 'afterresize' event
     timeout : false  //performing resize
@@ -282,14 +282,14 @@ Elements.centerParentResize = function(jqe, jqp)
     Elements.centerParent(jqe, jqp);
 
     if (typeof jqp.on != 'function')
-        return jqp.bind('resize', function(){
+        return jqp.live('resize', function(){
             Elements.centerParent(jqe, jqp);
         });
 
     Elements.startAfterResizeEvent(jqp);
     return jQuery(jqp).on('afterresize', 
         {"jqp":jqp,"jqe":jqe},
-        function(e){console.log("trig triggered");
+        function(e){
             Elements.centerParent(e.data.jqe, e.data.jqp);
         }
     );
@@ -417,6 +417,54 @@ Elements.resize = function(jqo,w,h,effect)
         "width"  : w,
         "height" : h
     }).trigger("afterresize");
+};
+/**
+ * shows a loading image
+ * @param {string} src - the image url
+ * @param {string/jquery} container the container element - defaults to body
+ * @return {jquery} the created image
+ */
+Elements.loading = function(src,container)
+{
+    Elements.loading.img  = $();
+    src = Cast.cstring(src);
+    container = Cast.cjquery(container);
+    if (! container.length)
+        container = jQuery("body");
+    
+    if (! (src && container.length)) {
+        console.log("Elements.loading img error");
+        return jQuery();
+    }
+    
+    Elements.loading.img  = jQuery("<img src=\"" + src + "\" style=\"display:none;\" />");
+    Elements.loading.img.appendTo(container);
+    
+    Elements.loading.img.load(function() {
+        $(this).css({
+            'position'    : 'fixed',
+            'z-index'     : 10000,
+            'left'        : '50%',
+            'top'         : '50%',
+            'margin-left' : '-' + (Elements.loading.img.width/2) + 'px',
+            'margin-top'  : '-' + (Elements.loading.img.height/2) + 'px'
+        });
+    }).error(function(){
+        console.log("Elements.loading img '"+ src +"' does not exist");
+    });
+    
+    Elements.loading.src = src;
+    return Elements.loading.img;
+};
+Elements.loading.img.show = function() 
+{
+    if (Elements.loading.img.length)
+        Elements.loading.img.fadeIn();
+};
+Elements.loading.img.hide = function() 
+{
+    if (Elements.loading.img.length)
+        Elements.loading.img.fadeOut();
 };
 /**
  * Sets if image is loaded, defaults to setting loaded = true
