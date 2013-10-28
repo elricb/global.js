@@ -282,7 +282,7 @@ Elements.centerParentResize = function(jqe, jqp)
     Elements.centerParent(jqe, jqp);
 
     if (typeof jqp.on != 'function')
-        return jqp.live('resize', function(){
+        return jqp.bind('resize', function(){
             Elements.centerParent(jqe, jqp);
         });
 
@@ -327,7 +327,7 @@ Elements.afterResize = function(e)
     if (new Date() - Elements.windowTime < Elements.tick) {
         setTimeout(Elements.afterResize, Elements.tick);
     } else {
-        Elements.timeout = false; console.log("set trigger");
+        Elements.timeout = false;
         jQuery(window).trigger("afterresize");
     } 
 };
@@ -456,12 +456,12 @@ Elements.loading = function(src,container)
     Elements.loading.src = src;
     return Elements.loading.img;
 };
-Elements.loading.img.show = function() 
+Elements.loading.show = function() 
 {
     if (Elements.loading.img.length)
         Elements.loading.img.fadeIn();
 };
-Elements.loading.img.hide = function() 
+Elements.loading.hide = function() 
 {
     if (Elements.loading.img.length)
         Elements.loading.img.fadeOut();
