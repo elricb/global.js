@@ -4,7 +4,7 @@
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.6,
+    version : 3.7,
     o       : [],    //stored jquery elements (attach id# to element)
     tick    : 200,   //resize timer tick for 'afterresize' event
     timeout : false  //performing resize
@@ -364,13 +364,17 @@ Elements.elementData = function(jqo, set, newData)
 /**
  * Resizes all matches to the largest dimensions
  * @param {jquery} jqo - many jquery objects
+ * @param {boolean} w - unify width
+ * @param {boolean} h - unify height
  * @return {jquery} jqo - .length = 0 on error
  */
-Elements.unifyDimensions = function(jqo)
+Elements.unifyDimensions = function(jqo, w, h)
 {
+    var maxw = 0,
+        maxh = 0;
+    w   = Cast.cboolean(w,true);
+    h   = Cast.cboolean(h,true);
     jqo = Cast.cjquery(jqo);
-    maxw = 0;
-    maxh = 0;
     jqo.each(function(){
         ajqo = $(this);
         if (ajqo.width() > maxw)
@@ -380,8 +384,10 @@ Elements.unifyDimensions = function(jqo)
     });
     jqo.each(function(){
         ajqo = $(this);
-        ajqo.width(maxw);
-        ajqo.height(maxh);
+        if (w)
+            ajqo.width(maxw);
+        if (h)
+            ajqo.height(maxh);
     });
     return jqo;
 };

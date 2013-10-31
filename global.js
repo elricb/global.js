@@ -101,7 +101,7 @@ function getCookie(name)  {
  * dependancies:  jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.6,
+    version : 3.7,
     o       : [],    //stored jquery elements (attach id# to element)
     tick    : 200,   //resize timer tick for 'afterresize' event
     timeout : false  //performing resize
@@ -131,7 +131,7 @@ if (typeof jQuery=='function') {
     Elements.startAfterResizeEvent=function(a){"undefined"==typeof Elements.startAfterResizeEventOn&&("undefined"==typeof a&&(a=window),Elements.startAfterResizeEventOn=!0,Elements.timeout=!1,$(a).on("resize",{jqp:a},function(){Elements.windowTime=new Date;!1===Elements.timeout&&(Elements.timeout=!0,setTimeout(Elements.afterResize,Elements.tick))}))};
     Elements.afterResize=function(a){new Date-Elements.windowTime<Elements.tick?setTimeout(Elements.afterResize,Elements.tick):(Elements.timeout=!1,jQuery(window).trigger("afterresize"))};
     Elements.elementData=function(a,b,c){var d={};a=Cast.cjquery(a);"object"==typeof b?(c=b,b="default"):(b=Cast.cstring(b))||(b="default");Cast.cjson(c);a.each(function(){d=Cast.cjson(a.data(b));jQuery.extend(d,c);a.data(b,d)});return d};
-    Elements.unifyDimensions=function(a){a=Cast.cjquery(a);maxh=maxw=0;a.each(function(){ajqo=$(this);ajqo.width()>maxw&&(maxw=ajqo.width());ajqo.height()>maxh&&(maxh=ajqo.height())});a.each(function(){ajqo=$(this);ajqo.width(maxw);ajqo.height(maxh)});return a};
+    Elements.unifyDimensions=function(a,b,c){var d=0,e=0;b=Cast.cboolean(b,!0);c=Cast.cboolean(c,!0);a=Cast.cjquery(a);a.each(function(){ajqo=$(this);ajqo.width()>d&&(d=ajqo.width());ajqo.height()>e&&(e=ajqo.height())});a.each(function(){ajqo=$(this);b&&ajqo.width(d);c&&ajqo.height(e)});return a};
     Elements.resize=function(d,a,b,c){Cast.isNumber(a)&&(a+="px");Cast.isNumber(b)&&(b+="px");c=Cast.cint(c);return 0<c?d.animate({width:a,height:b},c,function(a){jQuery(a.target).trigger("afterresize")}):d.css({width:a,height:b}).trigger("afterresize")};
     Elements.loading=function(a,b){Elements.loading.img=$();a=Cast.cstring(a);b=Cast.cjquery(b);b.length||(b=jQuery("body"));if(!a||!b.length)return console.log("Elements.loading img error"),jQuery();Elements.loading.img=jQuery('<img src="'+a+'" style="display:none;" />');Elements.loading.img.appendTo(b);Elements.loading.img.load(function(){$(this).css({position:"fixed","z-index":1E4,left:"50%",top:"50%","margin-left":"-"+Elements.loading.img.width/2+"px","margin-top":"-"+Elements.loading.img.height/ 2+"px"})}).error(function(){console.log("Elements.loading img '"+a+"' does not exist")});Elements.loading.src=a;return Elements.loading.img};
     Elements.loading.show=function(){Elements.loading.img.length&&Elements.loading.img.fadeIn()};
