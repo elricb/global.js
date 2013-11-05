@@ -4,7 +4,7 @@
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.7,
+    version : 3.8,
     o       : [],    //stored jquery elements (attach id# to element)
     tick    : 200,   //resize timer tick for 'afterresize' event
     timeout : false  //performing resize
@@ -69,6 +69,25 @@ Elements.get = function(ie) {
     if (ie < Elements.o.length)
         return Elements.o[ie];
     return jQuery();
+};
+/**
+ * @param {string} template - the template
+ * @param {json} r1 - keys and values to replace
+ * @param {json} r2 - keys and values to replace
+ * @return {string} new template
+ */
+Elements.popTemplateString = function(template, r1, r2) 
+{
+    template = Cast.cstring(template);
+    r1 = Cast.cjson(r1);
+    r2 = Cast.cjson(r2);
+    return template.replace(/{\w+}/g, function($0,$1){
+        if (! typeof r1[$1] == 'undefined')
+            return r1[$1];
+        if (! typeof r2[$1] == 'undefined')
+            return r2[$1];
+        return $1;
+    });
 };
 /**
  * Assign custom images to replace checkbox
@@ -378,9 +397,9 @@ Elements.unifyDimensions = function(jqo, w, h)
     jqo.each(function(){
         ajqo = $(this);
         if (ajqo.width() > maxw)
-            maxw = ajqo.width();
+            maxw = Math.max(ajqo.width(), ajqo.outerWidth());
         if (ajqo.height() > maxh)
-            maxh = ajqo.height();
+            maxh = Math.max(ajqo.height(), ajqo.outerHeight());
     });
     jqo.each(function(){
         ajqo = $(this);

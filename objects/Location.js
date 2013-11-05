@@ -3,9 +3,9 @@
  * dependancies:  jQuery 1.6+, Cast, URL, Images
  */
 var Location = {
-     version: 1.1,
-    "urlLocations":    "http://www."+ URL.domain +"/load_locations",
-    "urlUserLocation": "http://www."+ URL.domain +"/ext_api/detect_location.php",
+     version: 1.2,
+    "urlLocations":    "http://www1."+ URL.domain +"/load_locations",
+    "urlUserLocation": "http://www1."+ URL.domain +"/ext_api/detect_location.php",
 
     /**
      * Gets a list of locations based on type
@@ -24,7 +24,7 @@ var Location = {
             
         var selector = "?type=" + type + "&code=" + code + ((char2)?"&char2="+char2:"");
         
-        return jQuery.get(this.urlLocations + selector);
+        return Cast.cjson(jQuery.get(this.urlLocations + selector));
     },
     getCountries: function(code) {
         code = Cast.cstring(code); //blank = country codes, value = old country codes
