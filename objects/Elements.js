@@ -81,10 +81,10 @@ Elements.popTemplateString = function(template, r1, r2)
     template = Cast.cstring(template);
     r1 = Cast.cjson(r1);
     r2 = Cast.cjson(r2);
-    return template.replace(/{\w+}/g, function($0,$1){
-        if (! typeof r1[$1] == 'undefined')
+    return template.replace(/{(\w+)}/g, function($0,$1){
+        if (typeof r1[$1] != 'undefined')
             return r1[$1];
-        if (! typeof r2[$1] == 'undefined')
+        if (typeof r2[$1] != 'undefined')
             return r2[$1];
         return $1;
     });
@@ -397,9 +397,9 @@ Elements.unifyDimensions = function(jqo, w, h)
     jqo.each(function(){
         ajqo = $(this);
         if (ajqo.width() > maxw)
-            maxw = Math.max(ajqo.width(), ajqo.outerWidth());
+            maxw = ajqo.width();//Math.max(ajqo.width(), ajqo.outerWidth());
         if (ajqo.height() > maxh)
-            maxh = Math.max(ajqo.height(), ajqo.outerHeight());
+            maxh = ajqo.height();//Math.max(ajqo.height(), ajqo.outerHeight());
     });
     jqo.each(function(){
         ajqo = $(this);
