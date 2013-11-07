@@ -4,7 +4,7 @@
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.8,
+    version : 3.9,
     o       : [],    //stored jquery elements (attach id# to element)
     tick    : 200,   //resize timer tick for 'afterresize' event
     timeout : false  //performing resize
@@ -313,7 +313,61 @@ Elements.centerParentResize = function(jqe, jqp)
         }
     );
 };
-
+/**
+ * toggle - clicking jqt will toggle jqo open/closed
+ * @param {jquery/string} jqo - target element
+ * @param {jquery/string} jqt - triggering element
+ * @param {json} opts - options
+ *  {int/bool} w - resize width
+ *  {int/bool} h - resize height
+ *  {bool} t - is open/closed (default open)
+ */
+Elements.toggle = function(jqo, jqt, opts)
+{
+    opts = Cast.cjson(opts);  //options: w=width use, h=height use, t=start open/closed
+    jqo  = Cast.cjquery(jqo); //toggle target
+    jqt  = Cast.cjquery(jqt); //toggle trigger
+    opts["j"] = Elements.add(jqo); //convert to jquery object to int to attach to data
+    opts["t"] = Cast.cboolean(opts["t"],true); //default open
+    if (Cast.cboolean(opts["w"],false))
+        opts["w"] = Math.max(jqo.width(), Cast.cint(opts["w"])); //use target width, unless passed width is larger
+    if (Cast.cboolean(opts["h"],true))
+        opts["h"] = Math.max(jqo.height(), Cast.cint(opts["h"])); //use target height, unless passed width is larger
+    
+    jqt.data("toggle", Cast.csjson(opts));
+    
+    jqt.click(function(){
+        ajqo = $(this);
+        o = Cast.cjson(ajqo.data("toggle"));
+        o["t"] = Cast.cboolean(o["t"]);
+        var w = Cast.cint(o["w"]),
+            h = Cast.cint(o["h"]),
+            j = Elements.get(Cast.cint(o["j"]));
+        if (w)
+            if(o["t"]) //is open, close
+                j.animate({"width":0},function(){
+                    o["t"] = false;
+                    ajqo.data("toggle",Cast.csjson(o));
+                });
+            else //is closed, open
+                j.animate({"width":w},function(){
+                    o["t"] = true;
+                    ajqo.data("toggle",Cast.csjson(o));
+                });
+        if (h)
+            if(o["t"]) //is open, close
+                j.animate({"height":0},function(){
+                    o["t"] = false;
+                    ajqo.data("toggle",Cast.csjson(o));
+                });
+            else //is closed, open
+                j.animate({"height":h},function(){
+                    o["t"] = true;
+                    ajqo.data("toggle",Cast.csjson(o));
+                });
+        jqo.trigger("toggled");
+    });
+};
 /**
  * afterresize trigger events
  * startAfterResizeEvent(targetElement);
