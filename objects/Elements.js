@@ -329,9 +329,19 @@ Elements.toggle = function(jqo, jqt, opts)
     jqt  = Cast.cjquery(jqt); //toggle trigger
     opts["j"] = Elements.add(jqo); //convert to jquery object to int to attach to data
     opts["t"] = Cast.cboolean(opts["t"],true); //default open
-    if (Cast.cboolean(opts["w"],false))
+    opts["w"] = Cast.cboolean(opts["w"],false);
+    opts["h"] = Cast.cboolean(opts["h"],true);
+    if (! (jqo.width() && jqo.height())) { //closed, get size through clone
+        elem = jqo.clone().css({"height":"auto","width":"auto"}).appendTo("body");
+        if(opts["h"])
+            opts["h"] = elem.height();
+        if(opts["w"])
+            opts["w"] = elem.width();
+        elem.remove();
+    }
+    if (opts["w"])
         opts["w"] = Math.max(jqo.width(), Cast.cint(opts["w"])); //use target width, unless passed width is larger
-    if (Cast.cboolean(opts["h"],true))
+    if (opts["h"])
         opts["h"] = Math.max(jqo.height(), Cast.cint(opts["h"])); //use target height, unless passed width is larger
     
     jqt.data("toggle", Cast.csjson(opts));
