@@ -5,7 +5,7 @@
  */
 var Cast = {
     //version
-    v:3.2,
+    v:3.4,
     /**
      * convert anything to integer
      * @param {mixed} [i] - variable to convert
