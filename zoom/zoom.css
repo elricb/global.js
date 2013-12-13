@@ -1,0 +1,34 @@
+/**
+ *     Want to adjust the html relevant to the iFrame
+ * http://stackoverflow.com/questions/166160/how-can-i-scale-the-content-of-an-iframe
+ */
+.frame
+{
+    width: 1280px;
+    height: 786px;
+    border: 0;
+    -ms-zoom: 0.25;
+    -transform: scale(0.25);
+    -moz-transform: scale(0.25);
+    -moz-transform-origin: 0 0;
+    -o-transform: scale(0.25);
+    -o-transform-origin: 0 0;
+    -webkit-transform: scale(0.25);
+    -webkit-transform-origin: 0 0;
+}
+
+
+/**
+ *     some resizing logic
+ */
+#frame { /* Example size! */
+    height: 400px; /* original height */
+    width: 100%; /* original width */
+}
+#frame {
+    height: 500px; /* new height (400 * (1/0.8) ) */
+    width: 125%; /* new width (100 * (1/0.8) )*/
+
+    transform: scale(0.8); 
+    transform-origin: 0 0;
+}
