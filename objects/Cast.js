@@ -90,7 +90,7 @@ var Cast = {
     {
         if ( typeof df == 'undefined' )
             df = [];
-        if ( typeof o == 'undefined' )
+        if ( typeof o == 'undefined' || !o)
             return df;
         if (this.isArray(o))
             return o;
