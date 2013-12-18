@@ -1,20 +1,25 @@
+Cast = jQuery = Node = HTMLElement = {};
 /**
  * Element and Image functions
  * From: objects/Elements.js
  * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
  */
 var Elements = {
-    version : 3.9,
-    o       : [],    //stored jquery elements (attach id# to element)
-    tick    : 200,   //resize timer tick for 'afterresize' event
-    timeout : false  //performing resize
-}; //functions shared across all elements
+    version : 3.11,
+    o       : [],     //stored jquery elements (attach id# to element)
+    tick    : 200,    //resize timer tick for 'afterresize' event
+    timeout : false,  //performing resize
+    pxToIn  : Cast.cint($("<div style='display:block;position:relative;width:1in;margin:0px;padding:0px;border:none;' />").width())
+};  //functions shared across all elements
 var Images = {
     version:1.2
-};   //functions shared across all images
+};  //functions shared across all images
+
+(function () {
+   "use strict";
 
 
-if (typeof jQuery=='function') {
+if (typeof jQuery==='function') {
 /**
  * jquery plugins
  */
@@ -59,7 +64,7 @@ Elements.isHTMLObject = function(o){
 };
 
 Elements.add = function(o) {
-    ie = Elements.o.length;
+    var ie = Elements.o.length;
     Elements.o[ie] = Cast.cjquery(o);
     return ie;
 };
@@ -199,7 +204,6 @@ Elements.getContainer = function(ele, container)
         
     return {"width":parent.width(), "height":parent.height(), "jq": parent};
 };
-
 /**
  * Centers an element within a container
  * @param {jquery} ele - jquery element to center
@@ -834,3 +838,4 @@ Images.svgSupported = function()
     return Images.bSvgSupported;
 };
 
+}());
