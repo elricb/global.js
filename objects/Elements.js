@@ -95,6 +95,93 @@ Elements.popTemplateString = function(template, r1, r2)
     });
 };
 /**
+ * @param {string} template - the template
+ * @param {json} r1 - keys and values to replace
+ * @param {json} r2 - keys and values to replace
+ * @return {string} new template
+ * template json values:
+ *      value: var (or var.subvar.subsubvar)
+ *      template: url (location of subtemplate)
+ *      re: regularexpression (interpretation/conversion of variable)
+ *      replace: on false replace with this {string}
+ */
+Elements.popTemplateComplex = function(template, r1) 
+{
+    template = Cast.cstring(template);
+    r1 = Cast.cjson(r1);
+    r2 = Cast.cjson(r2);
+    return template.replace(/{(\w+)}/g, function($0,$1){
+        var item = Cast.cjson($1),
+            value = Cast.cstring(item.value).split(".");
+        
+        value = Cast.ctree(r1,value);
+        if(value == null)
+            value = {};
+        
+        if (Cast.cstring(item.template)) {
+            var subtemplate="";
+            $.ajax({
+                url: item.template,
+                async: false,
+                dataType: "text",
+                success: function(data){
+                    subtemplate = Elements.popTemplateComplex(data, r1);
+                }
+            });
+            return subtemplate;
+        }
+        
+        if (typeof r1[val.value] != 'undefined')
+            return r1[val.value];
+        
+        return "";
+    });
+};
+/**
+ * @param {string} url - the template url/file location
+ * @param {json} r1 - keys and values to replace
+ * @param {json} r2 - keys and values to replace
+ * @return {string} new template
+ * template json values:
+ *      value: var (or var.subvar.subsubvar)
+ *      template: url (location of subtemplate)
+ *      re: regularexpression (interpretation/conversion of variable)
+ *      replace: on false replace with this {string}
+ */
+Elements.popTemplateFileComplex = function(url)
+{
+    return Elements.jqxhrCompat($.ajax({
+        url: url,
+        async: false,
+        dataType: "text"
+    }));
+};
+/**
+ * wrap jqxhr returns with this to ensure methods done/fail/always exist
+ * jQuery 1.4-1.8 jqXHR.success(), jqXHR.error(), and jqXHR.complete()
+ * jQuery 1.8-2.0 jqXHR.done(data, textStatus, jqXHR), jqXHR.fail(jqXHR, textStatus, errorThrown), and jqXHR.always(data|jqXHR, textStatus, jqXHR|errorThrown)
+ */
+Elements.jqxhrCompat = function(jqxhr)
+{
+    if(! (typeof jqxhr == 'object' || typeof jqxhr == 'function')) {
+        return {
+            done: function(f){},
+            fail: function(f){
+                f(jqxhr,'error','promise object did not return fail method');
+            },
+            always: function(f){
+                f(jqxhr,'error','promise object did not return fail method');
+            }
+        };
+    }
+    if (typeof jqxhr.done != 'function' && typeof jqxhr.success == 'function') {
+        jqxhr.done   = jqxhr.success;
+        jqxhr.fail   = jqxhr.error;
+        jqxhr.always = jqxhr.complete;
+    }
+    return jqxhr;
+};
+/**
  * Assign custom images to replace checkbox
  * compatibility:  jQuery 1.0+, 
  * @param {string/jquery} checkBox - the checkbox element

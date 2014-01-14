@@ -1,7 +1,18 @@
 Elements = (typeof Elements=='object')?Elements:{};
 
+if (typeof jQuery != 'undefined') {
+    jQuery.fn.stats = function(){
+        Elements.stats($(this));
+    };
+}
 /**
- * Tools to add a little helping hand to where css hasn't evolved to
+ * Tools adding a helping hand to where css hasn't evolved to or needs some back/cross-browser compatibility
+ * Based on Sticky Layout model - suggest using physical size over pixels where possible
+ *      max: the largest an element can grow to
+ *      min: smallest constraint
+ *      absolute:  always one static size
+ *      liquid: size to contents
+ *      auto:  size to fill container width wise and size to contents height wise
  */
 Elements.pxToIn=Cast.cint($("<div style='display:block;position:relative;width:1in;margin:0px;padding:0px;border:none;' />").width());
 /**
@@ -20,33 +31,40 @@ Elements.unit = function(v, u)
             (Cast.cstring(v[2]))?v[2]:"px"
         ];
 };
-Elements.show = function(jqo)
+Elements.stats = function(jqo, title)
 {
-    jqo = Cast.cjquery(jqo);
+    jqo   = Cast.cjquery(jqo);
+    title = Cast.cstring(title);
     console.log(
-        "outerwidth:"
-        + Elements.unit(jqo.outerWidth(true),"in")
-        + " - "
+        title + "\n"
+        + "  outerwidth: "
         + Elements.unit(jqo.outerWidth(true),"px")
-        + "\n"
-        + "width:"
-        + Elements.unit(jqo.width(),"in")
         + " - "
-        + Elements.unit(jqo.width(),"px")
+        + Elements.unit(jqo.outerWidth(true),"in")
         + "\n"
-        + "outerHeight:"
+        + "  width:      "
+        + Elements.unit(jqo.width(),"px")
+        + " - "
+        + Elements.unit(jqo.width(),"in")
+        + "\n"
+        + "  outerHeight:"
+        + Elements.unit(jqo.outerHeight(true),"px")
+        + " - "
         + Elements.unit(jqo.outerHeight(true),"in")
         + "\n"
-        + "height:"
+        + "  height:     "
+        + Elements.unit(jqo.height(),"px")
+        + " - "
         + Elements.unit(jqo.height(),"in")
         + "\n"
     );
 };
 /**
+ * Only works for px to in and in to px right now
  * @param {array} a [#,unit]
  * Returns [#,unit] array of css measurement e.g. 3px, 4%, etc
  */
-Elements.unitConvert = function(a, unit)
+Elements.unitConvert = function(a, unit, container)
 {
     if (a[1]==unit) {
         return a;
@@ -55,14 +73,32 @@ Elements.unitConvert = function(a, unit)
         if (a[1]=="px")
             a[0] = Cast.cfloat(a[0]) / Elements.pxToIn;
         else if (a[1]=="em") //this will be complicated, get containers until you find a font set, or post a font and get size
-            return a;
+            a[0] = 1*12 / Elements.pxToIn;
+        else if (a[1]=="%") //get container's inner space and divide
+            a[0] = (Elements.innerSpace(container) / a[0] / Elements.pxToIn);
         a[1] = "in";
     }
     else if (unit=="px") {
-        console.log("!"+Cast.cfloat(a[0]) + "*" + Elements.pxToIn + "=" + (Cast.cfloat(a[0]) * Elements.pxToIn));
         if (a[1]=="in")
             a[0] = Cast.cfloat(a[0]) * Elements.pxToIn;
+        else if (a[1]=="em") //get this container's font size
+            a[0] = 1*12;
+        else if (a[1]=="%") //get this container's innerspace
+            a[0] = parseInt(Elements.innerSpace(container) / a[0]);
         a[1] = "px";
+    }
+    else if (unit=="%") {
+        if (a[1]=="in")
+            a[0] = (Elements.innerSpace(container) / a[0] / Elements.pxToIn);
+        else if (a[1]=="px")
+            a[0] = (Elements.innerSpace(container) / a[0]);
+        else if (a[1]=="em") //get this container's font size
+            a[0] = (Elements.innerSpace(container) / a[0] / 12);
+        a[1] = "%";
+    }
+    else if (unit=="em") {
+        a[0] = 1;
+        a[1] = "%";
     }
     return a;
 };
@@ -94,7 +130,34 @@ Elements.innerSpace = function(container)
     return space; //not jQuery.innerWidth because this doesn't consider border
 };
 /**
- * Justifies inline-block widths to fill their container
+ * Find width based on max, min, preset and current size (object must be pre-loaded if css.width is not set)
+ * @param {jquery} the element
+ * @param {json} css settings (max-width, min-width, width)
+ * @return {Element.unit} the calculated size
+ */
+Elements.getWidth = function(jqo, css, unit)
+{
+    unit = Cast.cstring(unit, "px");
+    css  = Cast.cjson(css);
+    return [
+        ((Cast.cstring(css.width)) ?
+            Elements.unit(css.width, "px")[0] :
+            Math.min(
+                Math.max(
+                    jqo.outerWidth(true), 
+                    Elements.unit(css["min-width"],"px")[0]
+                ), 
+                ((Cast.cstring(css["max-width"])) ?
+                    Elements.unit(css["max-width"],"px")[0] :
+                    jqo.outerWidth(true)
+                )
+            )
+        ),
+        unit
+    ];
+};
+/**
+ * Justifies inline-block widths to fill their container - good for galleries
  * @param {jQuery/string} jqc the container of the inline blocks
  * @param {jQuery/string} jqo the inline blocks to size
  * @param {Object} settings
@@ -103,15 +166,15 @@ Elements.innerSpace = function(container)
  *  "min"  : {Elements.unit} min size, best set in css - in the future this will activate for old browsers
  *  "max"  : {Elements.unit} max size, best set in css - in the future this will activate for old browsers
  */
-Elements.inlineLiquid = function(jqc, jqo, settings)
+Elements.inlineJustify = function(jqc, jqo, settings)
 {
     jqo = Cast.cjquery(jqo);
-    Elements.show(jqo);
+    //Elements.stats(jqo, "inlineJustify inline object");
+    //Elements.stats(jqc, "inlineJustify container object");
     settings = Cast.cjson(settings);
     Elements.startAfterResizeEvent(window);
-    var auto = [Math.max(jqo.outerWidth(true), Elements.unit(settings["min-width"],"px")[0]),"px"];
     jQuery(window).on("afterresize", {
-            "jqow": Cast.cstring(settings.base) ? Elements.unit(settings.base, "px") : auto, 
+            "jqow": Elements.getWidth(jqo, settings), 
             "jqc" : Cast.cjquery(jqc), 
             "jqo" : jqo, 
             "jqop": (jqo.outerWidth(true) - jqo.width()) + Cast.cint(settings.offset)
@@ -120,7 +183,8 @@ Elements.inlineLiquid = function(jqc, jqo, settings)
             e.data.jqcw = Elements.unit(Elements.innerSpace(e.data.jqc).width,"px");
             var ncol = parseInt(e.data.jqcw[0] / parseInt(e.data.jqcw[0] / e.data.jqow[0]));
             jqo.width(ncol-e.data.jqop);
-            //console.log("jqo.width:"+e.data.jqow+" jqc.width:"+e.data.jqcw+" cols:"+ ncol + " - " + (ncol-e.data.jqop) + " pti:"+Elements.pxToIn);
+            //Elements.stats(jqo, "inlineJustify inline object");
+            //Elements.stats(jqc, "inlineJustify container object");
     });
     jQuery(window).trigger("afterresize");
 };
