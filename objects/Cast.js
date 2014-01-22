@@ -1,13 +1,16 @@
 /**
  * Safe/Defaults variable casting and type detection
  * from: objects/Cast.js
- * dependancies: javascript 1.0
+ * @class Cast
+ * @version 3.5
+ * @requires javascript1.0+
  */
 var Cast = {
     //version
-    v:3.4,
+    v:3.5,
     /**
      * convert anything to integer
+     * @memberOf Class
      * @param {mixed} [i] - variable to convert
      * @param {mixed} [df] - default to return on cast error
      * @return {int} or default[0] on error
@@ -81,10 +84,11 @@ var Cast = {
         return false;
     },
     /**
-     * convert anything to array
+     * convert anything to an array, good for functions converting arguments to a type
+     * uses built-in .toArray method by default, breaks apart 1st layer of an object into an array
      * @param {mixed} [o] - variable to convert
      * @param {mixed} [df] - default to set ([] if omitted)
-     * @return {Array} or default on error
+     * @return {Array} Array or default on error
      */
     carray : function(o,df)
     {
@@ -134,7 +138,7 @@ var Cast = {
     },
     /**
      * check if is string
-     * @param {mixed} v - value to check
+     * @param {mixed} [v] value to check
      * @return {boolean} 
      */
     isString : function(v)
@@ -150,7 +154,7 @@ var Cast = {
      * convert anything to boolean
      * @param {mixed} [b] - variable to convert
      * @param {mixed} [df] - default to set (false if omitted)
-     * @return {boolean} or default[false] on error
+     * @return {boolean} boolean or default[false] on error
      */
     cboolean : function(b,df)
     {
@@ -162,7 +166,7 @@ var Cast = {
     },
     /**
      * check if is boolean
-     * @param {mixed} [v] - value to check
+     * @param {mixed} [v] value to check
      * @return {boolean} 
      */
     isBoolean : function(v)
@@ -314,8 +318,9 @@ var Cast = {
     /**
      * safely traverse down object tree
      * @param {object/function/array} 0 the base object
-     * @param {string/array} 1+ chain of sub objects
-     * @return null on error
+     * @param {mixed} 1 default value
+     * @param {string/array} 2+ chain of sub objects
+     * @return {mixed} null on error
      */
     ctree : function()
     {
@@ -339,5 +344,66 @@ var Cast = {
         }
         
         return arguments[1]; //not found
+    },
+    /**
+     * Elements.cjqxhr
+     * <div>This is useful when you want to ensure a function returns done/fail/always construct.</div>
+     * <div>returns a jquery XHR object.  Passes through existing ones, migrates old jQuery to done/fail/always.  Creates one when jqxhr is boolean or jquery not found.</div>
+     * @param {jQueryXHR|boolean} jqxhr - passes-through and backwards capatibles jQueryXHR objects.  Creates one when a boolean is sent (true=success, false=failure).
+     * @param {string} [message] - the message to return when jqxhr is boolean
+     * @return {jQueryXHR} always returns done/fail/always methods
+     */
+    cjqxhr : function(jqxhr, message)
+    {
+        if(typeof jqxhr == 'object' || typeof jqxhr == 'function') { //already is jqxhr
+            if (done in jqxhr && fail in jqxhr && always in jqxhr) {
+                return jqxhr;
+            }
+            else if (success in jqxhr && error in jqxhr && complete in jqxhr) { //old jQuery version
+                jqxhr.done   = jqxhr.success;
+                jqxhr.fail   = jqxhr.error;
+                jqxhr.always = jqxhr.complete;
+                return jqxhr;
+            }
+        }
+        
+        message = Cast.cstring(message);
+        
+        //not jqxhr, let's create one with jQuery
+        if (typeof jQuery != 'undefined') {
+            if (Deferred in jQuery) {
+                var dfd = new jQuery.Deferred();
+                if (jqxhr)
+                    dfd.resolve(message,'success', dfd);
+                else
+                    dfd.reject(dfd,'error', message);
+                return dfd.promise();
+            }
+        }
+        
+        //no available construct, let's fake one
+        if (! jqxhr) {
+            return  {
+                "message": message,
+                done: function(f){},
+                fail: function(f){
+                    f(jqxhr,'error', this.message);
+                },
+                always: function(f){
+                    f(jqxhr,'error', this.message);
+                }
+            };
+        }
+        else {
+            return  {
+                "message": message,
+                done: function(f){
+                    f(this.message, 'success', this);},
+                fail: function(f){},
+                always: function(f){
+                    f(this,'success', this.message);
+                }
+            };
+        }
     }
 };
