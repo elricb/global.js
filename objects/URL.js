@@ -1,6 +1,17 @@
 /**
- * dependancies: Cast.js
  * General URL string parsing
+ * From:  objects/URL.js
+ * @class URL
+ * @version 1.1
+ * @requires Cast
+ * @property {Float} version
+ * @property {String} href full url (http://somewhere.domain.com:21/hi.html?v=3&c=2#chapter)
+ * @property {String} host full domain (somewhere.domain.com)
+ * @property {String} domain sans sub domain (domain.com)
+ * @property {String} hash (#hash)
+ * @property {String} port the port number (:81)
+ * @property {String} protocol protocol (http:)
+ * @property {String} query full query string sans "?" (var1=one,var2=two,var3=three)
  */
 URL = {
     "version" : 1.1,
@@ -12,6 +23,10 @@ URL = {
     "protocol": Cast.cstring(window.location.protocol),
     "query"   : (Cast.cstring(window.location.search).split("?").length > 1)?Cast.cstring(window.location.search).split("?")[1]:Cast.cstring(window.location.search),
     
+    /**
+     * setValues
+     * Generates the .port and .domain on load
+     */
     setValues: function()
     {
         return this.setDomain().setPort();
@@ -51,7 +66,7 @@ URL = {
     
     /**
      * get a portion or all of the query string
-     * @param {Object} val - the query string key
+     * @param {Object} [val] - the query string key
      * @return {string} the key's value or entire query string upon omission of key
      */
     getQuery: function(val)

@@ -11,7 +11,7 @@
  * dependancies: javascript 1.0
  */
 var Cast={
-    v:3.4,
+    v:3.5,
     cint:function(b,c){"undefined"==typeof c&&(c=0);if("undefined"==typeof b)return c;b=parseInt(b,10);return isNaN(b)?c:b},
     cfloat:function(b,c){"undefined"==typeof c&&(c=0);if("undefined"==typeof b)return c;b=parseFloat(b,10);return isNaN(b)?c:b},
     isNumber:function(b){return"number"==typeof b||"object"==typeof b&&b&&b.constructor==Number?!0:!1},
@@ -31,7 +31,8 @@ var Cast={
     isDate:function(b){return"object"==typeof b&&b&&b.constructor==Date?!0:!1},
     cdefault:function(b,c){"undefined"==typeof c&&(c=null);return"undefined"==typeof b?c:b},
     isFunction:function(b){return"function"==typeof b||"object"==typeof b&&b&&b.constructor==Function?!0:!1},
-    ctree:function(){if(!arguments.length)return null;if(3>arguments.length||1==arguments[0].length)return arguments[0];if(Cast.isArray(arguments[2]))return arguments[2].unshift(arguments[1]), arguments[2].unshift(arguments[0]),this.ctree.apply(this,arguments[2]);if(arguments[2]in arguments[0]){a=[arguments[0][arguments[2]]];a.push(arguments[1]);for(var b=3;b<arguments.length;b++)a.push(arguments[b]);return this.ctree.apply(this,a)}return arguments[1]}
+    ctree:function(){if(!arguments.length)return null;if(3>arguments.length||1==arguments[0].length)return arguments[0];if(Cast.isArray(arguments[2]))return arguments[2].unshift(arguments[1]), arguments[2].unshift(arguments[0]),this.ctree.apply(this,arguments[2]);if(arguments[2]in arguments[0]){a=[arguments[0][arguments[2]]];a.push(arguments[1]);for(var b=3;b<arguments.length;b++)a.push(arguments[b]);return this.ctree.apply(this,a)}return arguments[1]},
+    cjqxhr:function(b,c){if("object"==typeof b||"function"==typeof b){if(done in b&&fail in b&&always in b)return b;if(success in b&&error in b&&complete in b)return b.done=b.success,b.fail=b.error,b.always=b.complete,b}c=Cast.cstring(c);if("undefined"!= typeof jQuery&&Deferred in jQuery){var d=new jQuery.Deferred;b?d.resolve(c,"success",d):d.reject(d,"error",c);return d.promise()}return b?{message:c,done:function(b){b(this.message,"success",this)},fail:function(b){},always:function(b){b(this,"success",this.message)}}:{message:c,done:function(b){},fail:function(c){c(b,"error",this.message)},always:function(c){c(b,"error",this.message)}}}
 };
 /**
  * Ensure base objects for older browsers (for lightweight sake the functionality isn't recreated, just made not to error)
@@ -96,63 +97,67 @@ function getCookie(name)  {
     return null;
 }
 /**
- * Element and Image functions
+ * Element and Image global objects
  * From: objects/Elements.js
- * dependancies:  jQuery 1.6+, Cast, Image
+ * dependancies:  jQuery 1.6+, Cast3.5+, DOMImage
  */
-var Elements = {
-    version : 3.9,
-    o       : [],    //stored jquery elements (attach id# to element)
-    tick    : 200,   //resize timer tick for 'afterresize' event
-    timeout : false  //performing resize
-}; //functions shared across all elements
-var Images = {
-    version:1.2
-};   //functions shared across all images
-
-if (typeof jQuery=='function') {
-    jQuery.fn.fitIn=function(a){return Images.fitImages(this,a)};
-    jQuery.fn.preload=function(){return Images.loadImages(this)};
-    jQuery.fn.resize=function(a,b,c){return Elements.resize($(this),a,b,c)};
-    jQuery.fn.center=function(a){return Elements.center($(this),a)}; 
-}
-    Elements.isHTMLNode=function(a){return"object"===typeof Node?a instanceof Node:a&&"object"===typeof a&&"number"===typeof a.nodeType&&"string"===typeof a.nodeName};
-    Elements.isHTMLElement=function(a){return"object"===typeof HTMLElement?a instanceof HTMLElement:a&&"object"===typeof a&&null!==a&&1===a.nodeType&&"string"===typeof a.nodeName};
-    Elements.isHTMLObject=function(a){return Elements.isHTMLElement()||Elements.isHTMLNode()}; 
-    Elements.add=function(a){ie=Elements.o.length;Elements.o[ie]=Cast.cjquery(a);return ie};
-    Elements.get=function(a){a=Cast.cint(a);return a<Elements.o.length?Elements.o[a]:jQuery()};
-    Elements.popTemplateString=function(b,c,d){b=Cast.cstring(b);c=Cast.cjson(c);d=Cast.cjson(d);return b.replace(/{(\w+)}/g,function(b,a){return"undefined"!=typeof c[a]?c[a]:"undefined"!=typeof d[a]?d[a]:a})}; 
-    Elements.checkBox=function(a,b,c,d){a=Cast.cjquery(a);if(!a.length)return jQuery();d=Cast.cboolean(d);a.after("<img />");var e=a.next("img");e.attr("imgOn",b).attr("imgOff",c).attr("src",d?b:c).show();d?a.attr("checked","checked"):a.removeAttr("checked");a.hide();e.click(function(){var a=jQuery(this).prev();a.attr("checked")?a.removeAttr("checked"):a.attr("checked","checked");a.change()});a.change(function(a){a=jQuery(a.target).next("img");a.attr("src",a.attr(jQuery(this).attr("checked")?"imgOn": "imgOff"));return!0});return e};
-    Elements.setLink=function(a){a=Cast.cjquery(a);a.css("cursor","pointer");a.click(function(){var a=jQuery(this),c=Cast.cstring(a.attr("href")),a=Cast.cstring(a.attr("target"));c&&(a?window.open(c,a):window.location.href=c)});return this};
-    Elements.getContainer=function(a,b){var c=jQuery();b=Cast.cobject(b);Cast.isString(b.parent)?c=a.parents(b.parent):Cast.isObject(b.parent)?c=Cast.cjquery(b.parent):Cast.cboolean(b.parent)&&(c=a.parent());c.length&&(b.width=c.width(),b.height=c.height());if(Cast.cint(b.width)&&Cast.cint(b.height))return{width:b.width,height:b.height,jq:c};c=a.parent();c.length||(c=jQuery(window));return{width:c.width(),height:c.height(),jq:c}};
-    Elements.center=function(a,b){var c,d={parent:!1,width:0,height:0,vertical:!0,horizontal:!0,persist:!0};a=Cast.cjquery(a);b=Cast.cobject(b);for(c in d)d[c]="undefined"!=typeof b[c]?b[c]:d[c];container=Elements.getContainer(a,d);parent=container.jq;return!parent.length||d.horizontal&&!d.vertical?Cast.cint(container.width)&&Cast.cint(container.height)?Elements.centerArea(a,container.width,container.height):a.css({"margin-left":"auto","margin-right":"auto","vertical-align":"middle"}):d.persist?Elements.centerParentResize(a, parent):Elements.centerParent(a,parent)};
-    Elements.centerParent=function(a,b){var c=Cast.cstring(a.css("position"));return"absolute"==c||"fixed"==c?a.css({left:Math.round((b.outerWidth()||b.width())/2-(a.outerWidth()||a.width())/2)+"px",top:Math.round((b.outerHeight()||b.height())/2-(a.outerHeight()||a.height())/2)+"px"}):a.css({"margin-left":Math.round((b.outerWidth()||b.width())/2-(a.outerWidth()||a.width())/2)+"px","margin-top":Math.round((b.outerHeight()||b.height())/2-(a.outerHeight()||a.height())/2)+"px"})};
-    Elements.centerArea=function(a,b,c){var d=Cast.cstring(a.css("position"));return"absolute"==d||"fixed"==d?a.css({left:Math.round(b/2-(a.outerWidth()||a.width())/2)+"px",top:Math.round(c/2-(a.outerHeight()||a.height())/2)+"px"}):a.css({"margin-left":Math.round(b/2-(a.outerWidth()||a.width())/2)+"px","margin-top":Math.round(c/2-(a.outerHeight()||a.height())/2)+"px"})};
-    Elements.centerParentResize=function(b,a){b=Cast.cjquery(b);a=Cast.cjquery(a);Elements.centerParent(b,a);if("function"!=typeof a.on)return a.live("resize",function(){Elements.centerParent(b,a)});Elements.startAfterResizeEvent(a);return jQuery(a).on("afterresize",{jqp:a,jqe:b},function(a){Elements.centerParent(a.data.jqe,a.data.jqp)})};
-    Elements.toggle=function(c,b,a){a=Cast.cjson(a);c=Cast.cjquery(c);b=Cast.cjquery(b);a.j=Elements.add(c);a.t=Cast.cboolean(a.t,!0);Cast.cboolean(a.w,!1)&&(a.w=Math.max(c.width(),Cast.cint(a.w)));Cast.cboolean(a.h,!0)&&(a.h=Math.max(c.height(),Cast.cint(a.h)));b.data("toggle",Cast.csjson(a));b.click(function(){ajqo=$(this);o=Cast.cjson(ajqo.data("toggle"));o.t=Cast.cboolean(o.t);var a=Cast.cint(o.w),b=Cast.cint(o.h),d=Elements.get(Cast.cint(o.j));a&&(o.t?d.animate({width:0},function(){o.t=!1;ajqo.data("toggle", Cast.csjson(o))}):d.animate({width:a},function(){o.t=!0;ajqo.data("toggle",Cast.csjson(o))}));b&&(o.t?d.animate({height:0},function(){o.t=!1;ajqo.data("toggle",Cast.csjson(o))}):d.animate({height:b},function(){o.t=!0;ajqo.data("toggle",Cast.csjson(o))}));c.trigger("toggled")})};
-    Elements.startAfterResizeEvent=function(a){"undefined"==typeof Elements.startAfterResizeEventOn&&("undefined"==typeof a&&(a=window),Elements.startAfterResizeEventOn=!0,Elements.timeout=!1,$(a).on("resize",{jqp:a},function(){Elements.windowTime=new Date;!1===Elements.timeout&&(Elements.timeout=!0,setTimeout(Elements.afterResize,Elements.tick))}))};
-    Elements.afterResize=function(a){new Date-Elements.windowTime<Elements.tick?setTimeout(Elements.afterResize,Elements.tick):(Elements.timeout=!1,jQuery(window).trigger("afterresize"))};
-    Elements.elementData=function(a,b,c){var d={};a=Cast.cjquery(a);"object"==typeof b?(c=b,b="default"):(b=Cast.cstring(b))||(b="default");Cast.cjson(c);a.each(function(){d=Cast.cjson(a.data(b));jQuery.extend(d,c);a.data(b,d)});return d};
-    Elements.unifyDimensions=function(a,b,c){var d=0,e=0;b=Cast.cboolean(b,!0);c=Cast.cboolean(c,!0);a=Cast.cjquery(a);a.each(function(){ajqo=$(this);ajqo.width()>d&&(d=ajqo.width());ajqo.height()>e&&(e=ajqo.height())});a.each(function(){ajqo=$(this);b&&ajqo.width(d);c&&ajqo.height(e)});return a};
-    Elements.resize=function(d,a,b,c){Cast.isNumber(a)&&(a+="px");Cast.isNumber(b)&&(b+="px");c=Cast.cint(c);return 0<c?d.animate({width:a,height:b},c,function(a){jQuery(a.target).trigger("afterresize")}):d.css({width:a,height:b}).trigger("afterresize")};
-    Elements.loading=function(a,b){Elements.loading.img=$();a=Cast.cstring(a);b=Cast.cjquery(b);b.length||(b=jQuery("body"));if(!a||!b.length)return console.log("Elements.loading img error"),jQuery();Elements.loading.img=jQuery('<img src="'+a+'" style="display:none;" />');Elements.loading.img.appendTo(b);Elements.loading.img.load(function(){$(this).css({position:"fixed","z-index":1E4,left:"50%",top:"50%","margin-left":"-"+Elements.loading.img.width/2+"px","margin-top":"-"+Elements.loading.img.height/ 2+"px"})}).error(function(){console.log("Elements.loading img '"+a+"' does not exist")});Elements.loading.src=a;return Elements.loading.img};
-    Elements.loading.show=function(){Elements.loading.img.length&&Elements.loading.img.fadeIn()};
-    Elements.loading.hide=function(){Elements.loading.img.length&&Elements.loading.img.fadeOut()};
-    Images.setLoaded=function(a,b){b=Cast.cboolean(b,!0);Cast.cjquery(a).data("loaded",b);return this};
-    Images.isLoaded=function(a){return Cast.cboolean(Cast.cjquery(a).data("loaded"))};
-    Images.loadImages=function(a){a=Cast.cjquery(a);var b=this;return jQuery.Deferred(function(c){a.each(function(d,e){b.loadImage(jQuery(e)).done(function(b,e,g){d>=a.length-1&&c.resolve(a)})});a.length||c.reject(a,"no image elements to preload")}).promise()};
-    Images.loadImage=function(a){var b=this;return jQuery.Deferred(function(c){a=Cast.cjquery(a);var d=new Image,e=Cast.cstring(a.attr("src"));d.onload=function(){Elements.elementData(a,{owidth:d.width,oheight:d.height});b.setLoaded(a);c.resolve(d.width,d.height,a)};d.onerror=function(b){Elements.elementData(a,{owidth:a.width(),oheight:a.height()});c.reject(a.width(),a.height(),a,"invalid src: "+e)};d.src=e;d.complete&&(Elements.elementData(a,{owidth:d.width,oheight:d.height}),b.setLoaded(a),c.resolve(d.width, d.height,a))}).promise()};
-    Images.getRatioW=function(a,b){var c=Cast.cobject(Elements.elementData(a)),c=Cast.cint(c.owidth)/Cast.cint(c.oheight);return isNaN(c)?0:b*c};
-    Images.getRatioH=function(a,b){var c=Cast.cobject(Elements.elementData(a)),c=Cast.cint(c.oheight)/Cast.cint(c.owidth);return isNaN(c)?0:b*c};
-    Images.resizeW=function(a,b,c){return Elements.resize(a,b,this.getRatioH(a,b),c)};
-    Images.resizeH=function(a,b,c){return Elements.resize(a,this.getRatioW(a,b),b,c)};
-    Images.fitInParent=function(a,b,c,d){b=Elements.getContainer(a,b);return this.fitInArea(a,b.width,b.height,c,d)};
-    Images.fitInArea=function(a,b,c,d,e){e=Cast.cboolean(e);return e==Math.abs(a.width()-b)<Math.abs(a.height()-c)?this.resizeW(a,b,d):this.resizeH(a,c,d)};
-    Images.fitImages=function(a,b){a=Cast.cjquery(a);var c=this;return jQuery.Deferred(function(d){a.each(function(e,f){c.fitImage(jQuery(f),b).done(function(b,c,f){e>=a.length-1&&d.resolve(f)})});a.length||d.reject(a)}).promise()};
-    Images.fitImage=function(a,b){var c=this;return this.loadImage(a).done(function(a,e,f){data={parent:!1,width:0,height:0,speed:0,bound:!0};jQuery.extend(data,Cast.cobject(b));Elements.elementData(f,"container",data);a=Elements.getContainer(f,data);c.fitInArea(f,a.width,a.height,data.speed,!data.bound)})};
-    Images.exists=function(a){return jQuery.Deferred(function(b){"undefined"!=typeof a&&a||b.reject(b,"fail","blank url","");jQuery("<img src='"+a+"' />").load(function(){b.resolve(a,"success",b)}).error(function(){b.reject(b,"fail","error loading image",a)})}).promise()};
-    Images.svg=function(a,b){a=Cast.cjquery(a);b=Cast.cstring(b);if(!Images.svgSupported())return a;a.each(function(){var a=$(this);b||(b=Cast.cstring(a.attr("svg")));"img"==a.prop("tagName")?a.attr("src",b):a.attr("background-image","url("+b+")")});return a};
-    Images.svgSupported=function(){if("undefined"!=typeof Images.bSvgSupported)return Images.bSvgSupported;var a=document.createElement("img");a.setAttribute("src","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNzUiIGhlaWdodD0iMjc1Ij48L3N2Zz4%3D");Images.bSvgSupported=a.complete;return Images.bSvgSupported};
+Elements={
+    version : 3.11,
+    o       : [],     //stored jquery elements (attach id# to element)
+    tick    : 200,    //resize timer tick for 'afterresize' event
+    timeout : false,  //performing resize
+    pxToIn  : 0,      //physical aspect ratio
+    getPxToIn:function(){return Cast.cint(jQuery("<div style='display:block;position:relative;width:1in;margin:0px;padding:0px;border:none;' />").width())},
+    isHTMLNode:function(a){return"object"===typeof Node?a instanceof Node:a&&"object"===typeof a&&"number"===typeof a.nodeType&&"string"===typeof a.nodeName},
+    isHTMLElement:function(a){return"object"===typeof HTMLElement?a instanceof HTMLElement:a&&"object"===typeof a&&null!==a&&1===a.nodeType&&"string"===typeof a.nodeName},
+    isHTMLObject:function(a){return Elements.isHTMLElement()|| Elements.isHTMLNode()},
+    add:function(a){var b=Elements.o.length;Elements.o[b]=Cast.cjquery(a);return b},
+    get:function(a){a=Cast.cint(a);return a<Elements.o.length?Elements.o[a]:jQuery()},
+    popTemplateString:function(a,b,c){a=Cast.cstring(a);b=Cast.cjson(b);c=Cast.cjson(c);return a.replace(/{(\w+)}/g,function(a,e){return"undefined"!=typeof b[e]?b[e]:"undefined"!=typeof c[e]?c[e]:e})},
+    fillTemplate:function(a,b){var c="",d=function(a){a=Cast.cstring(a).split("|");var c=Cast.ctree(b,"",a.shift().split(".")), d="";c&&!d&&(d=c);!c&&a.length&&(d=a.join("|"));return d};Cast.isString(a)?c=Cast.cstring(a):(a=Cast.cjson(a),c=Cast.cstring(a.template));b=Cast.cjson(b);if(!c||jQuery.isEmptyObject(b))return"";c=c.replace(/\[\[(.+?)\]\]/g,function(a,b){var c=Cast.cstring(b).split(":"),g=d(c.shift()),f="",c=c.join(":");if(1<c.length)for(item in g)f+=Elements.popTemplateComplex(c,g[item]);return f});return c.replace(/{{(.*?)}}/g,function(a,b){return d(b)})},overlay:function(a){return Cast.cjqxhr(!1,"function not created")},
+    checkBox:function(a,b,c,d){a=Cast.cjquery(a);if(!a.length)return jQuery();d=Cast.cboolean(d);a.after("<img />");var e=a.next("img");e.attr("imgOn",b).attr("imgOff",c).attr("src",d?b:c).show();d?a.attr("checked","checked"):a.removeAttr("checked");a.hide();e.click(function(){var a=jQuery(this).prev();a.attr("checked")?a.removeAttr("checked"):a.attr("checked","checked");a.change()});a.change(function(a){a=jQuery(a.target).next("img");a.attr("src",a.attr(jQuery(this).attr("checked")?"imgOn":"imgOff")); return!0});return e},
+    setLink:function(a){a=Cast.cjquery(a);a.css("cursor","pointer");a.click(function(){var a=jQuery(this),c=Cast.cstring(a.attr("href")),a=Cast.cstring(a.attr("target"));c&&(a?window.open(c,a):window.location.href=c)});return this},
+    getContainer:function(a,b){var c=jQuery();b=Cast.cobject(b);Cast.isString(b.parent)?c=a.parents(b.parent):Cast.isObject(b.parent)?c=Cast.cjquery(b.parent):Cast.cboolean(b.parent)&&(c=a.parent());c.length&&(b.width=c.width(),b.height=c.height());if(Cast.cint(b.width)&& Cast.cint(b.height))return{width:b.width,height:b.height,jq:c};c=a.parent();c.length||(c=jQuery(window));return{width:c.width(),height:c.height(),jq:c}},
+    center:function(a,b){var c,d={parent:!1,width:0,height:0,vertical:!0,horizontal:!0,persist:!0};a=Cast.cjquery(a);b=Cast.cobject(b);for(c in d)d[c]="undefined"!=typeof b[c]?b[c]:d[c];container=Elements.getContainer(a,d);parent=container.jq;return!parent.length||d.horizontal&&!d.vertical?Cast.cint(container.width)&&Cast.cint(container.height)?Elements.centerArea(a, container.width,container.height):a.css({"margin-left":"auto","margin-right":"auto","vertical-align":"middle"}):d.persist?Elements.centerParentResize(a,parent):Elements.centerParent(a,parent)},
+    centerParent:function(a,b){var c=Cast.cstring(a.css("position"));return"absolute"==c||"fixed"==c?a.css({left:Math.round((b.outerWidth()||b.width())/2-(a.outerWidth()||a.width())/2)+"px",top:Math.round((b.outerHeight()||b.height())/2-(a.outerHeight()||a.height())/2)+"px"}):a.css({"margin-left":Math.round((b.outerWidth()|| b.width())/2-(a.outerWidth()||a.width())/2)+"px","margin-top":Math.round((b.outerHeight()||b.height())/2-(a.outerHeight()||a.height())/2)+"px"})},
+    centerArea:function(a,b,c){var d=Cast.cstring(a.css("position"));return"absolute"==d||"fixed"==d?a.css({left:Math.round(b/2-(a.outerWidth()||a.width())/2)+"px",top:Math.round(c/2-(a.outerHeight()||a.height())/2)+"px"}):a.css({"margin-left":Math.round(b/2-(a.outerWidth()||a.width())/2)+"px","margin-top":Math.round(c/2-(a.outerHeight()||a.height())/2)+"px"})},
+    centerParentResize:function(a,b){a=Cast.cjquery(a);b=Cast.cjquery(b);Elements.centerParent(a,b);if("function"!=typeof b.on)return b.bind("resize",function(){Elements.centerParent(a,b)});Elements.startAfterResizeEvent(b);return jQuery(b).on("afterresize",{jqp:b,jqe:a},function(a){Elements.centerParent(a.data.jqe,a.data.jqp)})},
+    toggle:function(a,b,c){c=Cast.cjson(c);a=Cast.cjquery(a);b=Cast.cjquery(b);c.j=Elements.add(a);c.t=Cast.cboolean(c.t,!0);c.w=Cast.cboolean(c.w,!1);c.h=Cast.cboolean(c.h,!0); if(!a.width()||!a.height()){var d=a.clone().css({height:"auto",width:"auto"}).appendTo("body");c.h&&(c.h=d.height());c.w&&(c.w=d.width());d.remove()}c.w&&(c.w=Math.max(a.width(),Cast.cint(c.w)));c.h&&(c.h=Math.max(a.height(),Cast.cint(c.h)));b.data("toggle",Cast.csjson(c));b.click(function(b){var c=jQuery(b.target),d=Cast.cjson(c.data("toggle"));d.t=Cast.cboolean(d.t);b=Cast.cint(d.w);var g=Cast.cint(d.h),f=Elements.get(Cast.cint(d.j));b&&(d.t?f.animate({width:0},function(){d.t=!1;c.data("toggle", Cast.csjson(d))}):f.animate({width:b},function(){d.t=!0;c.data("toggle",Cast.csjson(d))}));g&&(d.t?f.animate({height:0},function(){d.t=!1;c.data("toggle",Cast.csjson(d))}):f.animate({height:g},function(){d.t=!0;c.data("toggle",Cast.csjson(d))}));a.trigger("toggled")})},
+    startAfterResizeEvent:function(a){"undefined"==typeof Elements.startAfterResizeEventOn&&("undefined"==typeof a&&(a=window),Elements.startAfterResizeEventOn=!0,Elements.timeout=!1,$(a).on("resize",{jqp:a},function(){Elements.windowTime= new Date;!1===Elements.timeout&&(Elements.timeout=!0,setTimeout(Elements.afterResize,Elements.tick))}))},
+    afterResize:function(a){new Date-Elements.windowTime<Elements.tick?setTimeout(Elements.afterResize,Elements.tick):(Elements.timeout=!1,jQuery(window).trigger("afterresize"))},
+    elementData:function(a,b,c){var d={};a=Cast.cjquery(a);"object"==typeof b?(c=b,b="default"):(b=Cast.cstring(b))||(b="default");Cast.cjson(c);a.each(function(){d=Cast.cjson(a.data(b));jQuery.extend(d,c);a.data(b,d)});return d},
+    unifyDimensions:function(a,b,c){var d=0,e=0;b=Cast.cboolean(b,!0);c=Cast.cboolean(c,!0);a=Cast.cjquery(a);a.each(function(){ajqo=$(this);ajqo.width()>d&&(d=ajqo.width());ajqo.height()>e&&(e=ajqo.height())});a.each(function(){ajqo=$(this);b&&ajqo.width(d);c&&ajqo.height(e)});return a},
+    resize:function(a,b,c,d){Cast.isNumber(b)&&(b=Cast.cint(b)+"px");Cast.isNumber(c)&&(c=Cast.cint(c)+"px");b||(b=a.width()+"px");c||(c=a.height()+"px");d=Cast.cint(d);return 0<d?a.stop().animate({width:b,height:c},d,function(){a.trigger("afterresize")}): a.css({width:b,height:c}).trigger("afterresize")},
+    loading:function(a,b){Elements.loading.img=$();a=Cast.cstring(a);b=Cast.cjquery(b);b.length||(b=jQuery("body"));if(!a||!b.length)return console.log("Elements.loading img error"),jQuery();Elements.loading.img=jQuery('<img src="'+a+'" style="display:none;" />');Elements.loading.img.appendTo(b);Elements.loading.img.load(function(){$(this).css({position:"fixed","z-index":1E4,left:"50%",top:"50%","margin-left":"-"+Elements.loading.img.width/2+"px","margin-top":"-"+ Elements.loading.img.height/2+"px"})}).error(function(){console.log("Elements.loading img '"+a+"' does not exist")});Elements.loading.src=a;return Elements.loading.img}
+};
+Elements.loading.show=function(){Elements.loading.img.length&&Elements.loading.img.fadeIn()};
+Elements.loading.hide=function(){Elements.loading.img.length&&Elements.loading.img.fadeOut()};
+var Images={
+    version:1.2,
+    setLoaded:function(a,b){b=Cast.cboolean(b,!0);Cast.cjquery(a).data("loaded",b);return this},
+    isLoaded:function(a){return Cast.cboolean(Cast.cjquery(a).data("loaded"))},
+    loadImages:function(a){a=Cast.cjquery(a);var b=this;return jQuery.Deferred(function(c){a.each(function(d,e){b.loadImage(jQuery(e)).done(function(b,e,g){d>=a.length-1&&c.resolve(a)})});a.length||c.reject(a,"no image elements to preload")}).promise()},
+    loadImage:function(a){var b=this;return jQuery.Deferred(function(c){a= Cast.cjquery(a);var d=new Image,e=Cast.cstring(a.attr("src"));d.onload=function(){Elements.elementData(a,{owidth:d.width,oheight:d.height});b.setLoaded(a);c.resolve(d.width,d.height,a)};d.onerror=function(b){Elements.elementData(a,{owidth:a.width(),oheight:a.height()});c.reject(a.width(),a.height(),a,"invalid src: "+e)};d.src=e;d.complete&&(Elements.elementData(a,{owidth:d.width,oheight:d.height}),b.setLoaded(a),c.resolve(d.width,d.height,a))}).promise()},
+    getRatioW:function(a,b){var c=Cast.cobject(Elements.elementData(a)), c=Cast.cint(c.owidth)/Cast.cint(c.oheight);return isNaN(c)?0:b*c},
+    getRatioH:function(a,b){var c=Cast.cobject(Elements.elementData(a)),c=Cast.cint(c.oheight)/Cast.cint(c.owidth);return isNaN(c)?0:b*c},
+    resizeW:function(a,b,c){return Elements.resize(a,b,this.getRatioH(a,b),c)},
+    resizeH:function(a,b,c){return Elements.resize(a,this.getRatioW(a,b),b,c)},
+    fitInParent:function(a,b,c,d){b=Elements.getContainer(a,b);return this.fitInArea(a,b.width,b.height,c,d)},
+    fitInArea:function(a,b,c,d,e){e=Cast.cboolean(e); return e==Math.abs(a.width()-b)<Math.abs(a.height()-c)?this.resizeW(a,b,d):this.resizeH(a,c,d)},
+    fitImages:function(a,b){a=Cast.cjquery(a);var c=this;return jQuery.Deferred(function(d){a.each(function(e,f){c.fitImage(jQuery(f),b).done(function(b,c,f){e>=a.length-1&&d.resolve(f)})});a.length||d.reject(a)}).promise()},
+    fitImage:function(a,b){var c=this;return this.loadImage(a).done(function(a,e,f){data={parent:!1,width:0,height:0,speed:0,bound:!0};jQuery.extend(data,Cast.cobject(b));Elements.elementData(f, "container",data);a=Elements.getContainer(f,data);c.fitInArea(f,a.width,a.height,data.speed,!data.bound)})},
+    exists:function(a){return jQuery.Deferred(function(b){"undefined"!=typeof a&&a||b.reject(b,"fail","blank url","");jQuery("<img src='"+a+"' />").load(function(){b.resolve(a,"success",b)}).error(function(){b.reject(b,"fail","error loading image",a)})}).promise()},
+    svg:function(a,b){a=Cast.cjquery(a);b=Cast.cstring(b);if(!Images.svgSupported())return a;a.each(function(){var a=$(this);b||(b=Cast.cstring(a.attr("svg"))); "img"==a.prop("tagName")?a.attr("src",b):a.attr("background-image","url("+b+")")});return a},
+    svgSupported:function(){if("undefined"!=typeof Images.bSvgSupported)return Images.bSvgSupported;var a=document.createElement("img");a.setAttribute("src","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNzUiIGhlaWdodD0iMjc1Ij48L3N2Zz4%3D");Images.bSvgSupported=a.complete;return Images.bSvgSupported}
+};
+//jQuery plugins
+"function"===typeof jQuery&&(
+    Elements.pxToIn=Elements.getPxToIn(),
+    jQuery.fn.fitIn=function(a){return Images.fitImages(this,a)},
+    jQuery.fn.preload=function(){return Images.loadImages(this)},
+    jQuery.fn.resize=function(a,b,c){return Elements.resize(jQuery(this),a,b,c)},
+    jQuery.fn.center=function(a){return Elements.center(jQuery(this),a)}
+);
 /**
  * User location functions
  * dependancies:  jQuery 1.6+, Cast, URL, Images

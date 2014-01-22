@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Test Global.js</title>
+<script>
+lib = [
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js", //0
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js",  //1
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js",  //2
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js",  //3
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js",  //4
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js",  //5
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js",  //6
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js",  //7
+];
+document.write(
+    "<s"+"cript src=\""+ lib[2] +"\"><"+"/script>"
+);
+</script>
+
+<script src="../objects/Cast.js"></script>
+<script src="../objects/Elements.js"></script>
+<script src="../objects/Layout.js"></script>
+
+<script>
+    $(document).ready(function(){
+        var jqt = Elements.fileTreeJson(
+            [
+                {
+                    "name" : "file1",
+                    "type" : "jpg",
+                    "contents" : []
+                },
+                {
+                    "name" : "file2",
+                    "type" : "doc",
+                    "contents" : []
+                },
+                {
+                    "name" : "dir1",
+                    "type" : "/",
+                    "contents" : [
+                        {
+                            "name" : "dirfile1",
+                            "type" : "doc",
+                            "contents" : []
+                        }
+                    ]
+                },
+                {
+                    "name" : "dir2",
+                    "type" : "/",
+                    "contents" : [
+                        {
+                            "name" : "dirfile1",
+                            "type" : "doc",
+                            "contents" : []
+                        }
+                    ]
+                },
+                {
+                    "name" : "dir3",
+                    "type" : "/",
+                    "contents" : [
+                        {
+                            "name" : "dirfile1",
+                            "type" : "doc",
+                            "contents" : []
+                        }
+                    ]
+                },
+                {
+                    "name" : "file3",
+                    "type" : "jpg",
+                    "contents" : []
+                }
+            ],
+            {
+                "*"  : "blah.jpg",
+                "/"  : "folder",
+                "hi" : "blah.jpg"
+            }
+        );
+        
+        console.log(jqt.html());
+        jQuery("#content").append(jqt);
+    });
+    
+</script>
+
+<style>
+    #content {
+        height:300px;
+        width:400px;
+        overflow:auto;
+    }
+    #content ul {
+        border: none;
+        overflow: hidden;
+    }
+    #content ul .title {
+        cursor: pointer;
+    }
+</style>
+
+</head>
+<body>
+    
+    <div id="content" style="border:1px solid black;">
+        content
+    </div>
+    
+</body>
+</html>
