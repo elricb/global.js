@@ -1,16 +1,56 @@
-Cast = jQuery = Node = HTMLElement = {};
 /**
- * Element and Image functions
+ * Element functions
  * From: objects/Elements.js
- * dependancies:  jQuery1.3+, (deferreds) jQuery 1.6+, Cast, Image
+ * @class Elements
+ * @version 3.11
+ * @requires jQuery1.3+
+ * @requires Cast3.5+
+ * @alias Elements
+ * @classDescription tools that affect html elements
+ * @property {Integer} pxToIn number of pixels in an inch (0 if jQuery not include before)
+ * @property {Float} version
+ * @property {function} isHTMLElement(domObject) determines if this is a dom element variable
+ * @property {function} add(jqo) add a jQuery object to Elements.o[]
+ * @property {function} get(integer) get a jQuery object from Elements.o[]
+ * @property {function} fillTemplate(string,json) populate an html string with json data
+ *      <ul>
+ *          <li>{{var}} insert var value, </li>
+ *          <li>{{var.var.var}} insert var chain value, </li>
+ *          <li>{{var|default}} insert default on false, </li>
+ *          <li>[[var.var: templatecode]] loop through var.var entries.</li>
+ *      </ul>
+ * @property {function} overlay(source) tbd
+ * @property {function} checkBox(jqo,on,off,boolean) adds custom on/off image to checkbox
+ * @property {function} setLinks(jqo) converts elements to links if they have href attribute and optionally target attribute
+ * @property {function} centerParent(target,container) centers target in container (css does a poor job of vertical alignment for liquid elements)
+ * @property {function} centerArea(jqo,width,height) centers an element in an area
+ * @property {function} toggle(target,source,{w:false,h:true,t:false}) toggles target when source is clicked, target throws toggled
+ * @property {function} afterResize(jqo) triggers afterresize event for jQuery element
+ * @property {function} unifyDimensions(jqo,[width],[height]) makes all jquery elements unified dimensions to largest element.
+ * @property {function} resize(jqo,w,h,[speed]) resize element(s) and throw afterresize event
+ * @property {function} loading(url,jquery) show a loading image, centered in element {<pre>
+ * loading.show() - shows loading image
+ * loading.hide() - hides loading image
+ * </pre>}
  */
 var Elements = {
     version : 3.11,
     o       : [],     //stored jquery elements (attach id# to element)
     tick    : 200,    //resize timer tick for 'afterresize' event
     timeout : false,  //performing resize
-    pxToIn  : Cast.cint($("<div style='display:block;position:relative;width:1in;margin:0px;padding:0px;border:none;' />").width())
+    pxToIn  : 0       //physical aspect ratio
 };  //functions shared across all elements
+/**
+ * Image functions
+ * From: objects/Elements.js
+ * @class Images
+ * @version 1.2
+ * @requires jQuery1.3+
+ * @requires Cast
+ * @requires DOMImage
+ * @alias Images
+ * @classDescription tools that affect html images
+ */
 var Images = {
     version:1.2
 };  //functions shared across all images
@@ -18,57 +58,70 @@ var Images = {
 (function () {
    "use strict";
 
-
-if (typeof jQuery==='function') {
 /**
- * jquery plugins
+ * Elements.getPxToIn
+ * Returns the number of pixels in a physical area inch
+ * @method
+ * @return {Integer} pixels
  */
-    jQuery.fn.fitIn = function(options)
-    {
-        return Images.fitImages(this, options);
-    };
-    
-    jQuery.fn.preload = function()
-    {
-        return Images.loadImages(this);
-    };
-    
-    jQuery.fn.resize = function(w,h,effect)
-    {
-        return Elements.resize(jQuery(this), w, h, effect);
-    };
-    
-    jQuery.fn.center = function(options)
-    {
-        return Elements.center(jQuery(this), options);
-    };
-
-}
-
+Elements.getPxToIn = function()
+{
+    return Cast.cint(jQuery("<div style='display:block;position:relative;width:1in;margin:0px;padding:0px;border:none;' />").width());
+};
+/**
+ * Elements.isHTMLNode
+ * @method
+ * @memberOf Elements
+ * @param {HTMLObject/jQuery/Object}
+ * @return {Boolean} if type node
+ */
 Elements.isHTMLNode = function(o){
     return (
         typeof Node === "object" ? o instanceof Node : 
         o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName==="string"
     );
 };
-
+/**
+ * Elements.isHTMLElement
+ * @method
+ * @memberOf Elements
+ * @param {HTMLObject|jQuery|Object}
+ * @return {Boolean} if type html element
+ */
 Elements.isHTMLElement = function(o){
     return (
         typeof HTMLElement === "object" ? o instanceof HTMLElement : //DOM2
         o && typeof o === "object" && o !== null && o.nodeType === 1 && typeof o.nodeName==="string"
     );
 };
-
+/**
+ * Elements.isHTMLObject
+ * @method
+ * @param {HTMLObject|jQuery|Object} o
+ * @return {Boolean} if type html object
+ */
 Elements.isHTMLObject = function(o){
     return (Elements.isHTMLElement() || Elements.isHTMLNode());
 };
-
+/**
+ * Elements.add
+ * Adds a jQuery object to Elements.o array and returns the array index (used by Elements.get).  
+ * Good for when you need attach an object reference to an element.
+ * @method
+ * @param {HTMLObject|jQuery|Selector-String} o
+ * @return {Integer} index
+ */
 Elements.add = function(o) {
     var ie = Elements.o.length;
     Elements.o[ie] = Cast.cjquery(o);
     return ie;
 };
-
+/**
+ * Elements.get
+ * Get a jQuery object added via Elements.add. 
+ * @param {Integer} o
+ * @return {jQuery} index
+ */
 Elements.get = function(ie) {
     ie = Cast.cint(ie);
     if (ie < Elements.o.length)
@@ -76,6 +129,8 @@ Elements.get = function(ie) {
     return jQuery();
 };
 /**
+ * Elements.popTemplateString
+ * @deprecated replaced by fillTemplate
  * @param {string} template - the template
  * @param {json} r1 - keys and values to replace
  * @param {json} r2 - keys and values to replace
@@ -95,112 +150,109 @@ Elements.popTemplateString = function(template, r1, r2)
     });
 };
 /**
- * @param {string} template - the template
- * @param {json} r1 - keys and values to replace
- * @param {json} r2 - keys and values to replace
+ * fillTemplate simple template conversion.  good for populating html with json data.
+ * @todo a file embeding method
+ * @param {string|json} source - the source template
+ *      as Json: {"template" : {string} template}
+ *      <div>template structure:</div>
+ *      <ul>
+ *          <li>{{var}} insert var value, </li>
+ *          <li>{{var.var.var}} insert var chain value, </li>
+ *          <li>{{var|default}} insert default on false, </li>
+ *          <li>[[var.var: templatecode]] loop through var.var entries.</li>
+ *      </ul>
+ * @param {json|object|function|string-json} struct - keys and values to replace
  * @return {string} new template
- * template json values:
- *      value: var (or var.subvar.subsubvar)
- *      template: url (location of subtemplate)
- *      re: regularexpression (interpretation/conversion of variable)
- *      replace: on false replace with this {string}
  */
-Elements.popTemplateComplex = function(template, r1) 
+Elements.fillTemplate = function(source, struct) 
 {
-    template = Cast.cstring(template);
-    r1 = Cast.cjson(r1);
-    r2 = Cast.cjson(r2);
-    return template.replace(/{(\w+)}/g, function($0,$1){
-        var item = Cast.cjson($1),
-            value = Cast.cstring(item.value).split(".");
-        
-        value = Cast.ctree(r1,value);
-        if(value == null)
-            value = {};
-        
-        if (Cast.cstring(item.template)) {
-            var subtemplate="";
-            $.ajax({
-                url: item.template,
-                async: false,
-                dataType: "text",
-                success: function(data){
-                    subtemplate = Elements.popTemplateComplex(data, r1);
-                }
-            });
-            return subtemplate;
+    var template = "",
+        getval = function(v) {
+            var d     = Cast.cstring(v).split("|"),
+                value = Cast.ctree(struct, "", d.shift().split(".")),
+                r     = "";
+            
+            if (value && ! r) {
+                r = value;
+            }
+            
+            if (! value && d.length) { //default construct
+                r = d.join("|");
+            }
+            
+            return r;
+        };
+    
+    if (Cast.isString(source)) {
+        template = Cast.cstring(source);
+    }
+    else {
+        source = Cast.cjson(source);
+        template = Cast.cstring(source["template"]);
+    }
+    struct = Cast.cjson(struct);
+    
+    if (! template || jQuery.isEmptyObject(struct)) {
+        return "";
+    }
+    
+    template = template.replace(/\[\[(.+?)\]\]/g, function($0,$1){
+        var loop  = Cast.cstring($1).split(":"),
+            value = getval(loop.shift()),
+            r = "";
+
+        loop = loop.join(":");
+        if (loop.length > 1) { //loop construct
+            for (item in value) {
+                r += Elements.popTemplateComplex(loop, value[item]);
+            }
         }
         
-        if (typeof r1[val.value] != 'undefined')
-            return r1[val.value];
-        
-        return "";
+        return r;
+    });
+    
+    return template.replace(/{{(.*?)}}/g, function($0,$1){
+        return getval($1);
     });
 };
 /**
- * @param {string} url - the template url/file location
- * @param {json} r1 - keys and values to replace
- * @param {json} r2 - keys and values to replace
- * @return {string} new template
- * template json values:
- *      value: var (or var.subvar.subsubvar)
- *      template: url (location of subtemplate)
- *      re: regularexpression (interpretation/conversion of variable)
- *      replace: on false replace with this {string}
+ * Elements.overlay
+ * <div>Simple overlay generation.  fadeIn when content loaded.</div>
+ * @todo create this function
+ * @param {json} settings
+ *      <ul>{
+ *          <li>"url"  : {string} target url html contents</li>
+ *          <li>"html" : {string} html contents</li>
+ *      }</ul>
+ * @return {jqxhr} done, fail and always methods are returned
  */
-Elements.popTemplateFileComplex = function(url)
+Elements.overlay = function(source)
 {
-    return Elements.jqxhrCompat($.ajax({
-        url: url,
-        async: false,
-        dataType: "text"
-    }));
+    return Cast.cjqxhr(false, 'function not created');
 };
 /**
- * wrap jqxhr returns with this to ensure methods done/fail/always exist
- * jQuery 1.4-1.8 jqXHR.success(), jqXHR.error(), and jqXHR.complete()
- * jQuery 1.8-2.0 jqXHR.done(data, textStatus, jqXHR), jqXHR.fail(jqXHR, textStatus, errorThrown), and jqXHR.always(data|jqXHR, textStatus, jqXHR|errorThrown)
- */
-Elements.jqxhrCompat = function(jqxhr)
-{
-    if(! (typeof jqxhr == 'object' || typeof jqxhr == 'function')) {
-        return {
-            done: function(f){},
-            fail: function(f){
-                f(jqxhr,'error','promise object did not return fail method');
-            },
-            always: function(f){
-                f(jqxhr,'error','promise object did not return fail method');
-            }
-        };
-    }
-    if (typeof jqxhr.done != 'function' && typeof jqxhr.success == 'function') {
-        jqxhr.done   = jqxhr.success;
-        jqxhr.fail   = jqxhr.error;
-        jqxhr.always = jqxhr.complete;
-    }
-    return jqxhr;
-};
-/**
- * Assign custom images to replace checkbox
- * compatibility:  jQuery 1.0+, 
- * @param {string/jquery} checkBox - the checkbox element
+ * Assign custom images to the checkbox on/off state.  
+ * Changes original checkbox state and works seamlessly in forms.  
+ * Works down to IE6, then gracefully degrades into a regular checkbox.
+ * @method
+ * @memberOf Elements
+ * @param {string|jquery} cb - the checkbox element
  * @param {url} imgOn - the checked image link
  * @param {url} imgOff - the unchecked image link
  * @param {boolean} [bOn] - default checked state
  * @return {jquery} the new check element
- * @event checkbox.change()
+ * @fires change
  */
-Elements.checkBox = function(checkBox, imgOn, imgOff, bOn) 
+Elements.checkBox = function(cb, imgOn, imgOff, bOn) 
 {
-    checkBox = Cast.cjquery(checkBox);
-    if (! checkBox.length)
+    cb = Cast.cjquery(cb);
+    if (! cb.length)
         return jQuery();
     
     bOn = Cast.cboolean(bOn);
     
-    checkBox.after("<img />");
-    var customBox = checkBox.next("img");
+    cb.after("<img />");
+    var customBox = cb.next("img");
     
     customBox
         .attr("imgOn", imgOn)
@@ -209,11 +261,11 @@ Elements.checkBox = function(checkBox, imgOn, imgOff, bOn)
         .show();
     
     if(bOn)
-        checkBox.attr('checked', 'checked');
+        cb.attr('checked', 'checked');
     else
-        checkBox.removeAttr('checked'); //override css setting
+        cb.removeAttr('checked'); //override css setting
     
-    checkBox.hide();
+    cb.hide();
         
     customBox.click(function() {
         var jqCheck = jQuery(this).prev(); 
@@ -224,7 +276,7 @@ Elements.checkBox = function(checkBox, imgOn, imgOff, bOn)
         jqCheck.change();
     });
     
-    checkBox.change(function(e){
+    cb.change(function(e){
         var cust = jQuery(e.target).next("img");
         cust.attr("src", cust.attr(((!!jQuery(this).attr('checked'))?"imgOn":"imgOff")) );
         return true;
@@ -233,8 +285,8 @@ Elements.checkBox = function(checkBox, imgOn, imgOff, bOn)
     return customBox;
 };
 /**
- * With attributes href and target, converts any element into an anchor (e.g. <div href='link.html'></div>)
- * @param {jquery/string} s - selector to convert elements into links (tracks clicks)
+ * With attributes href and target, converts any element into an anchor/link (e.g. <div href='link.html'></div>)
+ * @param {jquery|string} s - selector or object to add link to (tracks clicks)
  * @return {this}
  */
 Elements.setLink = function(s) 
@@ -258,6 +310,11 @@ Elements.setLink = function(s)
  * Determines width and height of container based on container options
  * @param {jquery} ele - the contained jquery element
  * @param {json} options - container options
+ *      <ul>{
+ *          <li>"parent" : {HTMLobject|jQuery}</li>
+ *          <li>"width"  : {Integer}</li>
+ *          <li>"height" : {Integer}</li>
+ *      }</ul>
  * @return {json} width/height - defaults to window width/height
  */
 Elements.getContainer = function(ele, container)
@@ -337,9 +394,8 @@ Elements.center = function(ele, settings)
     
     return Elements.centerParent(ele, parent);
 };
-
 /**
- * Center element in parent
+ * Center element in parent element
  * @param {jquery} jqe centered element
  * @param {jquery} jqp parent container (usually window)
  * @return {jquery} jqe
@@ -357,9 +413,8 @@ Elements.centerParent = function(jqe, jqp)
         "margin-top"  : Math.round( ((jqp.outerHeight() || jqp.height())/2) - ((jqe.outerHeight() || jqe.height())/2) ) + "px"
     });
 };
-
 /**
- * Center element in height/width
+ * Center element in a specified height/width pixels
  * @param {jquery} jqe centered element
  * @param {int} width
  * @param {int} height
@@ -380,7 +435,7 @@ Elements.centerArea = function(jqe, w, h)
 };
 
 /**
- * Create an event to center parent on change
+ * Center element into parent and re-center element on 'afterresize' events.  Invokes event if not already invoked.
  * @param {jquery} jqp parent container (usually window)
  * @param {jquery} jqe centered element
  * @return {jquery} jqe
@@ -406,12 +461,16 @@ Elements.centerParentResize = function(jqe, jqp)
 };
 /**
  * toggle - clicking jqt will toggle jqo open/closed
+ * uses Elements.add to keep entire tree in memory - probably need another way to go about it
  * @param {jquery/string} jqo - target element
  * @param {jquery/string} jqt - triggering element
  * @param {json} opts - options
- *  {int/bool} w - resize width
- *  {int/bool} h - resize height
- *  {bool} t - is open/closed (default open)
+ * {<pre>
+ *  "w" : {int|bool} resize width
+ *  "h" : {int|bool} resize height
+ *  "t" : {boolean} is open/closed (default open)
+ * </pre>}
+ * @fires toggled
  */
 Elements.toggle = function(jqo, jqt, opts)
 {
@@ -423,7 +482,7 @@ Elements.toggle = function(jqo, jqt, opts)
     opts["w"] = Cast.cboolean(opts["w"],false);
     opts["h"] = Cast.cboolean(opts["h"],true);
     if (! (jqo.width() && jqo.height())) { //closed, get size through clone
-        elem = jqo.clone().css({"height":"auto","width":"auto"}).appendTo("body");
+        var elem = jqo.clone().css({"height":"auto","width":"auto"}).appendTo("body");
         if(opts["h"])
             opts["h"] = elem.height();
         if(opts["w"])
@@ -437,9 +496,9 @@ Elements.toggle = function(jqo, jqt, opts)
     
     jqt.data("toggle", Cast.csjson(opts));
     
-    jqt.click(function(){
-        ajqo = $(this);
-        o = Cast.cjson(ajqo.data("toggle"));
+    jqt.click(function(ev){
+        var ajqo = jQuery(ev.target),
+            o = Cast.cjson(ajqo.data("toggle"));
         o["t"] = Cast.cboolean(o["t"]);
         var w = Cast.cint(o["w"]),
             h = Cast.cint(o["h"]),
@@ -470,8 +529,9 @@ Elements.toggle = function(jqo, jqt, opts)
     });
 };
 /**
- * afterresize trigger events
- * startAfterResizeEvent(targetElement);
+ * The 'afterresize' event triggers after a window is resized.  This speeds up actions that rely on window size.  
+ * This function starts the afterresize event. It only needs to be called once per jqp (self checks if it's already called.)
+ * @param {HTMLObject|jQuery} [jqp] basically this is the window object 99% of the time
  */
 Elements.startAfterResizeEvent = function(jqp)
 {
@@ -495,6 +555,7 @@ Elements.startAfterResizeEvent = function(jqp)
 };
 /**
  * triggers "afterresize" event
+ * @fires afterresize
  */
 Elements.afterResize = function(e)
 {
@@ -502,13 +563,18 @@ Elements.afterResize = function(e)
         setTimeout(Elements.afterResize, Elements.tick);
     } else {
         Elements.timeout = false;
+        /**
+         * afterResize event.
+         * @event afterresize
+         * @type {jQuery:event}
+         */
         jQuery(window).trigger("afterresize");
     } 
 };
 /**
- * When image functions are performed, image data is stored on the element
- * In the case of multiple elements, it always returns the data of the first
- * @param {jquery} img - the jquery element
+ * Stores data on the element.  This function needs updating.
+ * @private
+ * @param {jquery} jqo - the jquery element
  * @param {string} [dataSet] - the subset of data to save
  * @param {json} [data] - the data to save
  * @return {json} the image data
@@ -537,7 +603,7 @@ Elements.elementData = function(jqo, set, newData)
 };
 /**
  * Resizes all matches to the largest dimensions
- * @param {jquery} jqo - many jquery objects
+ * @param {jquery|selector-string} jqo - many jquery objects
  * @param {boolean} w - unify width
  * @param {boolean} h - unify height
  * @return {jquery} jqo - .length = 0 on error
@@ -566,12 +632,13 @@ Elements.unifyDimensions = function(jqo, w, h)
     return jqo;
 };
 /**
- * Resizes image to new width/height all css units accepted
- * @param {jquery} jqo - one jquery object
- * @param {string/int} w - new width
- * @param {string/int} h - new height
+ * Resizes element to new width/height all css units accepted
+ * @param {jquery|selector-string} jqo - one jquery object
+ * @param {string|int} w - new width
+ * @param {string|int} h - new height
  * @param {int} effect - speed to animate to new size (0 = instant)
  * @return {jQuery} object - use "afterresize" event
+ * @fires afterresize
  */
 Elements.resize = function(jqo,w,h,effect)
 {
@@ -599,9 +666,13 @@ Elements.resize = function(jqo,w,h,effect)
     }).trigger("afterresize");
 };
 /**
- * shows a loading image
+ * Creates a loading image, centered in the container.  Uses methods:
+ * <ul>
+ *      <li>Elements.loading.show()</li>
+ *      <li>Elements.loading.hide()</li>
+ * </ul>
  * @param {string} src - the image url
- * @param {string/jquery} container the container element - defaults to body
+ * @param {selector-string|jquery} [container] - the container element - defaults to body
  * @return {jquery} the created image
  */
 Elements.loading = function(src,container)
@@ -636,11 +707,21 @@ Elements.loading = function(src,container)
     Elements.loading.src = src;
     return Elements.loading.img;
 };
+/**
+ * Elements.loading.show
+ * shows a loading image, after Elements.loading is called
+ * @memberof Elements.loading
+ */
 Elements.loading.show = function() 
 {
     if (Elements.loading.img.length)
         Elements.loading.img.fadeIn();
 };
+/**
+ * Elements.loading.show
+ * hides the loading image
+ * @memberof Elements.loading
+ */
 Elements.loading.hide = function() 
 {
     if (Elements.loading.img.length)
@@ -648,8 +729,8 @@ Elements.loading.hide = function()
 };
 /**
  * Sets if image is loaded, defaults to setting loaded = true
- * @param {jQuery/string} img - selector or jquery img element, assumes one element
- * @param {boolean} [b] - optional, sets loaded to true or false, default true.
+ * @param {jQuery|string} img - selector or jquery img element, assumes one element
+ * @param {boolean} [b] sets loaded to true or false, default true.
  * @return this object
  */
 Images.setLoaded = function(img, b)
@@ -660,7 +741,7 @@ Images.setLoaded = function(img, b)
 };
 /**
  * Determines if image is loaded
- * @param {jQuery/string} img - selector or jquery img element, assumes one element
+ * @param {jQuery|string} img - selector or jquery img element, assumes one element
  * @return {boolean}
  */
 Images.isLoaded = function(img)
@@ -670,8 +751,15 @@ Images.isLoaded = function(img)
     );
 };
 /**
- * Prelaods many image elements
- * @param {jQuery/string} imgs - one to many jQuery img elements (can be jQuery element or selector string)
+ * Preloads many image elements
+ * @example
+ *      Elements.loading("url");
+ *      Elements.loading.show();
+ *      Images.loadImages(".images").done(function(imgs){
+ *          Elements.loading.hide();
+ *          imgs.fadeIn();
+ *      });
+ * @param {jQuery|string} imgs - one to many jQuery img elements (can be jQuery element or selector string)
  * @return {jqXHR}
  */
 Images.loadImages = function(imgs)
@@ -692,6 +780,13 @@ Images.loadImages = function(imgs)
 };
 /**
  * Preloads one image element and gets the width and height of the original image
+ * @example
+ *      Elements.loading("url");
+ *      Elements.loading.show();
+ *      Images.loadImage("#myimage").done(function(w, h, img){
+ *          Elements.loading.hide();
+ *          img.fadeIn();
+ *      });
  * @param {jQuery} img - one jQuery img element
  * @return {jqXHR} theImage.width, theImage.height, img, errorString
  */
@@ -731,7 +826,8 @@ Images.loadImage = function(img)
     }).promise();
 };
 /**
- * Depends on image being loaded
+ * Resize image to target height.  Uses aspect ratio to determine width.
+ * @todo adjust element data to read original-width/original-height at the element root
  * @param {jquery} img - one img element
  * @return {int} the aspect ratio correct width in pixels
  */
@@ -744,7 +840,8 @@ Images.getRatioW = function(img, targetH)
     return targetH*rW;
 };
 /**
- * Depends on image being loaded
+ * Resize image to target width.  Uses aspect ratio to determine height.
+ * @todo adjust element data to read original-width/original-height at the element root
  * @param {jquery} img - one img element
  * @return {int} the aspect ratio correct height in pixels
  */
@@ -758,6 +855,7 @@ Images.getRatioH = function(img, targetW)
 };
 /**
  * Resizes image to new width and aspect ratio height
+ * @todo add ability to resize on px, in or percent - will need to size, get new size in px, then apply aspect ratio
  * @param {jquery} img - one img element
  * @param {string/int} w - new width
  * @param {int} effect - speed to animate to new size (0 = instant)
@@ -774,6 +872,7 @@ Images.resizeW = function(img, targetW, effect)
 };
 /**
  * Resizes image to new height and aspect ratio width
+ * @todo add ability to resize on px, in or percent - will need to size, get new size in px, then apply aspect ratio
  * @param {jquery} img - one img element
  * @param {string/int} h - new height
  * @param {int} effect - speed to animate to new size (0 = instant)
@@ -791,7 +890,7 @@ Images.resizeH = function(img, targetH, effect)
 /**
  * size an image inside a container (maintaining aspect ratio)
  * @param {jquery} img the image element to fit
- * @param {jquery/string} the jquery or selector of container
+ * @param {jquery/string} container - the jquery or selector of container
  * @param {int} speed - the fade in speed (0 for instant)
  * @param {boolean} unbound - false (default) fit largest side in container, true - fit smallest side to container (overflow happens)
  * @return {Images} this
@@ -804,7 +903,8 @@ Images.fitInParent = function(img, container, speed, unbound)
 /**
  * size an image inside a width and height (maintaining aspect ratio)
  * @param {jquery} img the image element to fit
- * @param {int} w/h the containing width and height
+ * @param {int} w the containing width
+ * @param {int} h the containing height
  * @param {int} speed - the fade in speed (0 for instant)
  * @param {boolean} unbound - false (default) fit largest side in container, true - fit smallest side to container (overflow happens)
  * @return {Images} this
@@ -889,10 +989,15 @@ Images.exists = function(url)
     }).promise();
 };
 /**
- * Load svg image when supported
- * If tag type = img, uses src.  Otherwise uses background-image.
- * @param {string/jquery} jqo - element(s) to swap
- * @param {string} svg - svg source (if omitted, use tag svg)
+ * <div>Load svg image when supported</div>
+ * <div>If tag type = img, uses src.  Otherwise uses background-image.</div>
+ * <div>For speed sake, set <img src="" height="px or css" width="px or css" svg="url" img="" /></div>
+ * @example 
+ *      $(document).ready(function(){
+ *          Images.svg(".svgs");
+ *      });
+ * @param {selector-string|jquery} jqo - element(s) to swap
+ * @param {string} svg - svg source (if omitted, use img attribute svg)
  */
 Images.svg = function(jqo, svg)
 {
@@ -924,5 +1029,33 @@ Images.svgSupported = function()
     Images.bSvgSupported = img.complete;
     return Images.bSvgSupported;
 };
+
+
+if (typeof jQuery==='function') {
+
+    Elements.pxToIn = Elements.getPxToIn();
+    
+    jQuery.fn.fitIn = function(options)
+    {
+        return Images.fitImages(this, options);
+    };
+    
+    jQuery.fn.preload = function()
+    {
+        return Images.loadImages(this);
+    };
+    
+    jQuery.fn.resize = function(w,h,effect)
+    {
+        return Elements.resize(jQuery(this), w, h, effect);
+    };
+    
+    jQuery.fn.center = function(options)
+    {
+        return Elements.center(jQuery(this), options);
+    };
+
+}
+
 
 }());
