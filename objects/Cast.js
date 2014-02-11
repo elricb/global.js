@@ -7,7 +7,7 @@
  */
 var Cast = {
     //version
-    v:3.5,
+    v:3.6,
     /**
      * convert anything to integer
      * @memberOf Class
@@ -103,7 +103,8 @@ var Cast = {
         if (typeof o.toArray == "object") {
             df = [];
             for(var i in o)
-                df.push(o[i]);
+                if (o.hasOwnProperty(i))
+                    df.push(o[i]);
             return df;
         }
         return [o];
@@ -317,38 +318,38 @@ var Cast = {
     },
     /**
      * safely traverse down object tree
-     * @param {object/function/array} 0 the base object
+     * @param {object|function|array} 0 the base object
      * @param {mixed} 1 default value
-     * @param {string/array} 2+ chain of sub objects
+     * @param {string|array} 2+ chain of sub objects
      * @return {mixed} null on error
      */
-    ctree : function()
+    ctree : function(struct, df, keys)
     {
-        if (! arguments.length)
-            return null;
-        if (arguments.length < 3 || arguments[0].length == 1)
-            return arguments[0];
+        df   = typeof df == 'undefined' ? null : df;
+        keys = Cast.carray(keys,[]);
         
-        if (Cast.isArray(arguments[2])) { //stretch argument[2] into separate arguments
-            arguments[2].unshift(arguments[1]);
-            arguments[2].unshift(arguments[0]);
-            return this.ctree.apply(this, arguments[2]);
+        if (arguments.length > 3) {//convert extra arguments to array (kindof want to remove this option)
+            for(var i=2;i<arguments.length;i++)
+                keys.push(arguments[i]);
         }
         
-        if (arguments[2] in arguments[0]) {
-            a = [arguments[0][arguments[2]]];
-            a.push(arguments[1]);
-            for(var i=3; i<arguments.length;i++) //next item
-                a.push(arguments[i]);
-            return this.ctree.apply(this,a);
+        if (keys.length) {
+            if (typeof struct == 'object' && keys[0] in struct) {
+                var a = keys.shift();
+                if (keys.length)
+                    return this.ctree.call(this, struct[a], df, keys);
+                return struct[a];
+            }
         }
         
-        return arguments[1]; //not found
+        return df; //not found
     },
     /**
      * Elements.cjqxhr
      * <div>This is useful when you want to ensure a function returns done/fail/always construct.</div>
      * <div>returns a jquery XHR object.  Passes through existing ones, migrates old jQuery to done/fail/always.  Creates one when jqxhr is boolean or jquery not found.</div>
+     * <div>jQuery 1.4-1.8 jqXHR.success(), jqXHR.error(), and jqXHR.complete()</div>
+     * <div>jQuery 1.8-2.0 jqXHR.done(data, textStatus, jqXHR), jqXHR.fail(jqXHR, textStatus, errorThrown), and jqXHR.always(data|jqXHR, textStatus, jqXHR|errorThrown)</div>
      * @param {jQueryXHR|boolean} jqxhr - passes-through and backwards capatibles jQueryXHR objects.  Creates one when a boolean is sent (true=success, false=failure).
      * @param {string} [message] - the message to return when jqxhr is boolean
      * @return {jQueryXHR} always returns done/fail/always methods
