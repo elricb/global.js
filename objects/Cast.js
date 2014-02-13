@@ -357,10 +357,10 @@ var Cast = {
     cjqxhr : function(jqxhr, message)
     {
         if(typeof jqxhr == 'object' || typeof jqxhr == 'function') { //already is jqxhr
-            if (done in jqxhr && fail in jqxhr && always in jqxhr) {
+            if ("done" in jqxhr && "fail" in jqxhr && "always" in jqxhr) {
                 return jqxhr;
             }
-            else if (success in jqxhr && error in jqxhr && complete in jqxhr) { //old jQuery version
+            else if ("success" in jqxhr && "error" in jqxhr && "complete" in jqxhr) { //old jQuery version
                 jqxhr.done   = jqxhr.success;
                 jqxhr.fail   = jqxhr.error;
                 jqxhr.always = jqxhr.complete;
@@ -372,7 +372,7 @@ var Cast = {
         
         //not jqxhr, let's create one with jQuery
         if (typeof jQuery != 'undefined') {
-            if (Deferred in jQuery) {
+            if ("Deferred" in jQuery) {
                 var dfd = new jQuery.Deferred();
                 if (jqxhr)
                     dfd.resolve(message,'success', dfd);
