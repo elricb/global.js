@@ -13,12 +13,17 @@
  * @property {function} isHTMLElement(domObject) determines if this is a dom element variable
  * @property {function} add(jqo) add a jQuery object to Elements.o[]
  * @property {function} get(integer) get a jQuery object from Elements.o[]
- * @property {function} fillTemplate(string,json) populate an html string with json data
+ * @property {function} populate(string,json,rex) populate an html string with json data
  *      <ul>
+ *          <li>{{var}} loop recursively if object/function/array, </li>
  *          <li>{{var}} insert var value, </li>
  *          <li>{{var.var.var}} insert var chain value, </li>
- *          <li>{{var|default}} insert default on false, </li>
- *          <li>[[var.var: templatecode]] loop through var.var entries.</li>
+ *      </ul>
+ * @property {function} populateTag(string,json,tag,rex) populate an html string with json data
+ *      <ul>
+ *          <li>{{var}} loop recursively if object/function/array, </li>
+ *          <li>{{var}} insert var value, </li>
+ *          <li>{{var.var.var}} insert var chain value, </li>
  *      </ul>
  * @property {function} overlay(source) tbd
  * @property {function} checkBox(jqo,on,off,boolean) adds custom on/off image to checkbox
@@ -35,7 +40,7 @@
  * </pre>}
  */
 var Elements = {
-    version : 3.11,
+    version : 3.12,
     o       : [],     //stored jquery elements (attach id# to element)
     tick    : 200,    //resize timer tick for 'afterresize' event
     timeout : false,  //performing resize
@@ -195,9 +200,9 @@ Elements.loadFile = function(url, type, data)
     }));
 };
 /**
- * templateReplace simple find/replace template conversion.  good for populating html quickly with json data.
+ * populate fills a string with json data using regular expression replace.
  * @todo a file embeding method better than non-async
- * @todo what about looping?
+ * @todo what about numerical keys?
  * @param {string} source - the source template
  * @param {json|object|string-json} struct - keys and values to replace
  * @param {string} rex - the regular expression to replace, uses second result
@@ -210,7 +215,7 @@ Elements.loadFile = function(url, type, data)
  *          <li>{{var}} if variable not found, assume file and load as next template, </li>
  *      </ul>
  */
-Elements.templateReplace = function(template, struct, rex) 
+Elements.populate = function(template, struct, rex) 
 {
     rex = typeof rex == 'undefined' ? /\{\{(.+?)\}\}/g : rex;
     
@@ -223,7 +228,7 @@ Elements.templateReplace = function(template, struct, rex)
             if (value.constructor == Object || value.constructor == Array || value.constructor == Function) {
                 if (typeof jQuery == 'function' && jQuery.isEmptyObject(value))
                     return ""; //fill area with blank
-                return Elements.templateReplace(template, value, rex);
+                return Elements.populate(template, value, rex);
             }
         }
         
@@ -231,15 +236,15 @@ Elements.templateReplace = function(template, struct, rex)
             return value;
         
         //lets get the file sequentially (could be slow)
-        for (;value = Cast.ctree(struct, null, item) == null && item.length;item.pop()); //lets find if there's a partial to start from
+        //for (;value = Cast.ctree(struct, null, item) == null && item.length;item.pop()); //lets find if there's a partial to start from
         
-        if (typeof jQuery == 'function')
+        if (typeof jQuery == 'function' && item.length)
             jQuery.ajax({
                 url      : item.join("."),
                 async    : false,
                 dataType : "text",
                 success  : function(data) {
-                    r += Elements.templateReplace(data, value || struct, rex);
+                    r += Elements.populate(data, value || struct, rex);
                 }
             });
         
@@ -247,7 +252,8 @@ Elements.templateReplace = function(template, struct, rex)
     });
 };
 /**
- * templateHtml simple json data replacer.
+ * populateTag populates a string with json tag using an html tag format
+ * @requires Elements.populate
  * @requires jQuery
  * @param {string} source - the source template
  * @param {json|object|string-json} struct - keys and values to replace
@@ -264,20 +270,23 @@ Elements.templateReplace = function(template, struct, rex)
  *          <li>&lt;/tplt&gt; close tag for templating</li>
  *      </ul>
  */
-Elements.templateHtml = function(template, struct, tag, regex) 
+Elements.populateTag = function(template, struct, tag, regex) 
 {
     tag      = typeof tag == 'undefined' ? "tpt" : tag;
-    template = jQuery(template).find(tag);
+    template = jQuery("<div>" + template + "</div>");
+    var tags = template.find(tag);
     
-    template.each(function(data){
+    tags.each(function(data){
         var jqo   = jQuery(this),
             key   = Cast.cstring(jqo.attr("key")),
             value = Cast.ctree(struct,null,key),
             sss   = val || struct,
             rex   = Cast.cstring(jqo.attr("rex"));
         
-        if (rex && value && ! RegExp(rex).test(val))
-            continue;
+        if (rex && value && ! RegExp(rex).test(value)) {
+            jqo.html("");
+            return true; //continue;
+        }
         
         if (value && typeof value == 'object' || typeof value == 'function' || typeof value == 'array') {
             if (value.constructor == Object || value.constructor == Array || value.constructor == Function) {
@@ -285,163 +294,23 @@ Elements.templateHtml = function(template, struct, tag, regex)
                 if (Cast.cboolean(jqo.attr("loop"))) {
                     var s = "";
                     for (var i in value) {
-                        s += Elements.templateReplace(jqo.html(), value[i], regex);
+                        s += Elements.populate(jqo.html(), value[i], regex);
                     }
                     jqo.html(s);
-                    continue;
+                    return true; //same as continue;
                 }
                 jqo.html(
-                    Elements.templateReplace(jqo.html(), value, regex)
+                    Elements.populate(jqo.html(), value, regex)
                 );
             }
         }
         
         jqo.html(
-            Elements.templateReplace(jqo.html(), struct, regex)
+            Elements.populate(jqo.html(), struct, regex)
         );
     });
     
     return template.html();
-};
-/**
- * fillTemplate simple template conversion.  good for populating html with json data.
- * @todo a file embeding method
- * @param {string|json} source - the source template
- *      as Json: {"template" : {string} template}
- *      <div>template structure:</div>
- *      <ul>
- *          <li>{{var}} insert var value, </li>
- *          <li>{{var.var.var}} insert var chain value, </li>
- *          <li>{{var|default}} insert default on false, </li>
- *          <li>[[var.var: templatecode]] loop through var.var entries.</li>
- *      </ul>
- * @param {json|object|function|string-json} struct - keys and values to replace
- * @return {string} new template
- */
-Elements.fillTemplate = function(source, struct) 
-{
-    var template = "",
-        getval = function(v) {
-            var d     = Cast.cstring(v).split("|"),
-                value = Cast.ctree(struct, "", d.shift().split(".")),
-                r     = "";
-            
-            if (value && ! r) {
-                r = value;
-            }
-            
-            if (! value && d.length) { //default construct
-                r = d.join("|");
-            }
-            
-            return r;
-        };
-    
-    if (Cast.isString(source)) {
-        template = Cast.cstring(source);
-    }
-    else {
-        source = Cast.cjson(source);
-        template = Cast.cstring(source["template"]);
-    }
-    struct = Cast.cjson(struct);
-    
-    if (! template || jQuery.isEmptyObject(struct)) {
-        return "";
-    }
-    
-    template = template.replace(/\[\[(.+?)\]\]/g, function($0,$1){
-        var loop  = Cast.cstring($1).split(":"),
-            value = getval(loop.shift()),
-            r = "";
-
-        loop = loop.join(":");
-        if (loop.length > 1) { //loop construct
-            for (item in value) {
-                r += Elements.fillTemplate(loop, value[item]);
-            }
-        }
-        
-        return r;
-    });
-    
-    return template.replace(/{{(.*?)}}/g, function($0,$1){
-        return getval($1);
-    });
-};
-/**
- * fillTemplate simple template conversion.  good for populating html with json data.
- * @todo a file embeding method
- * @param {string} source - the source template
- *      as Json: {"template" : {string} template}
- *      <div>template structure:</div>
- *      <ul>
- *          <li>{{var}} insert var value, </li>
- *          <li>{{var.var.var}} insert var chain value, </li>
- *          <li>{{var|default}} insert default on false, </li>
- *          <li>[[var.var: templatecode]] loop through var.var entries.</li>
- *      </ul>
- * @param {json|object|function|string-json} struct - keys and values to replace
- * @return {string} new template
- */
-Elements.fillTemplate = function(source, struct) 
-{
-    var template = "",
-        parseA   = function(src, str)
-        {
-            return template.replace(/{{(.*?)}}/g, function($0,$1){
-                //get file
-                if (! $1 in str) {
-                    //get file
-                    //return promise
-                }
-                //get value
-                return Cast.ctree(struct, "", $1.split("."));
-            });
-        };
-    
-    source = Cast.cstring(source);
-    struct = Cast.cjson(struct);
-    
-    if (! source || jQuery.isEmptyObject(struct)) {
-        return "";
-    }
-    
-    source = template.replace(/\[\[(.+?)\]\]/g, function($0,$1){
-        var id    = $1.indexOf(":") == -1 ? $1.length : $1.indexOf(":"),
-            name  = $1.substr(0,id).split("|"),
-            value = $1.substr(id+1);
-        
-        //match, populate
-        if (name[0] in struct) {
-            //using regular expression to display html
-            if (name[1] && value) {
-                if (name[0].match(name[1])) {
-                //return fillTemplate(value,struct).done();
-                }
-            }
-            //loop this template
-            for(var i in struct[name[0]]) {
-                //fillTemplate(template, struct[name[0]])
-            }
-        }
-        //not in structure, assume file
-        else {
-            //http: will be broken
-            //load(file).done(dfd.resolve(this.fillTemplate));
-        }
-        
-        loop = loop.join(":");
-        if (loop.length > 1) { //loop construct
-            for (item in value) {
-                r += Elements.popTemplateComplex(loop, value[item]);
-            }
-        }
-        
-        return r;
-    });
-    
-    return parseA(source, struct);
 };
 /**
  * Elements.overlay
