@@ -257,6 +257,7 @@ Elements.populate = function(template, struct, rex)
  * @requires jQuery
  * @param {string} source - the source template
  * @param {json|object|string-json} struct - keys and values to replace
+ * @param {string} jquery-selector tag - the elements to populate
  * @param {string} rex - the regular expression to replace, uses second result
  * @return {string} new template
  * @example
@@ -279,34 +280,28 @@ Elements.populateTag = function(template, struct, tag, regex)
     tags.each(function(data){
         var jqo   = jQuery(this),
             key   = Cast.cstring(jqo.attr("key")),
-            value = Cast.ctree(struct,null,key),
-            sss   = val || struct,
-            rex   = Cast.cstring(jqo.attr("rex"));
+            value = Cast.ctree(struct,null,key) || struct,
+            rex   = Cast.cstring(jqo.attr("rex")),
+            i     = 0,
+            s     = "";
         
         if (rex && value && ! RegExp(rex).test(value)) {
             jqo.html("");
             return true; //continue;
         }
         
-        if (value && typeof value == 'object' || typeof value == 'function' || typeof value == 'array') {
-            if (value.constructor == Object || value.constructor == Array || value.constructor == Function) {
-                value = value || struct;
-                if (Cast.cboolean(jqo.attr("loop"))) {
-                    var s = "";
-                    for (var i in value) {
-                        s += Elements.populate(jqo.html(), value[i], regex);
-                    }
-                    jqo.html(s);
-                    return true; //same as continue;
-                }
-                jqo.html(
-                    Elements.populate(jqo.html(), value, regex)
-                );
+        if (Cast.cboolean(jqo.attr("loop"))
+            && typeof value == 'object' || typeof value == 'function' || typeof value == 'array') {
+            for (i in value) {
+                s += Elements.populate(jqo.html(), value[i], regex);
             }
+            jqo.html(s);
+            if (i)
+                return true; //same as continue;
         }
         
         jqo.html(
-            Elements.populate(jqo.html(), struct, regex)
+            Elements.populate(jqo.html(), value, regex)
         );
     });
     
