@@ -25,7 +25,7 @@ document.write(
 
 <script>
     $(document).ready(function(){
-        var jqt = Elements.fileTreeJson(
+        var jqt = Elements.fileTree("",
             [
                 {
                     "name" : "file1",
@@ -42,9 +42,20 @@ document.write(
                     "type" : "/",
                     "contents" : [
                         {
-                            "name" : "dirfile1",
-                            "type" : "doc",
-                            "contents" : []
+                            "name" : "subdir1",
+                            "type" : "/",
+                            "contents" : [
+                                {
+                                    "name" : "dirfile1",
+                                    "type" : "doc",
+                                    "contents" : []
+                                },
+                                {
+                                    "name" : "dirfile2",
+                                    "type" : "doc",
+                                    "contents" : []
+                                }
+                            ]
                         }
                     ]
                 },
@@ -77,13 +88,13 @@ document.write(
                 }
             ],
             {
-                "*"  : "blah.jpg",
+                "*"  : "",
                 "/"  : "folder",
                 "hi" : "blah.jpg"
             }
         );
         
-        console.log(jqt.html());
+        //console.log(jqt.html());
         jQuery("#content").append(jqt);
     });
     

@@ -246,7 +246,7 @@ Elements.inlineJustify = function(jqc, jqo, settings)
  * </pre>},
  * @return {jQuery} the file tree HTML
  */
-Elements.fileTreeJson = function(files, images)
+Elements.fileTreeJsonOld = function(path, files, images)
 {
     var jqo = jQuery("<ul />"),
         jqot = null,
@@ -288,6 +288,7 @@ Elements.fileTreeJson = function(files, images)
 };
 /**
  * Lists files/folders in a dropdown method based on source json.
+ * @param {string} path - the starting absolute path point
  * @param {json} files
  * {<pre>
  *  "name":{string} the file/folder name
@@ -303,46 +304,186 @@ Elements.fileTreeJson = function(files, images)
  *  "text/json" : {"url"},  //mime reference
  * </pre>},
  * @return {jQuery} the file tree HTML
+ * @fires selected
+ * @fires toggled
  */
-Elements.fileTreeJson = function(path, files, images)
+Elements.fileTree = function(path, files, images, useRaw)
+{
+    var jqo = Elements.fileTree.json(path, files, images);
+    useRaw = Cast.cboolean(useRaw, true);
+    
+    jqo.find(".title").click({"jqo":jqo}, function(e){
+        var title  = jQuery(this),                                   //jQuery(e.target), e.target is the smallest denomination of element clicked
+            path   = Cast.cstring(title.closest("li").attr("path")), //first li parent
+            folder = Cast.cstring(title.attr("target")),             //unused for now
+            name   = title.children(".name:first-child").text(),     //first name child
+            contents = title.next("ul");                             //next ul
+        console.log("e.target: " + jQuery(e.target).attr("class"));
+        //console.log("title: " + title.length);
+        e.data.jqo.trigger("selected", [title, path]);
+        
+        if (contents.length && contents.children("li").length) {
+            if(contents.is(":visible"))
+                contents.hide();
+            else
+                contents.show();
+            
+            e.data.jqo.trigger("toggled", [title.find(".toggle"), contents.is(":visible"), contents, path+"/"+folder]);
+        }
+        
+        return true;
+    });
+    
+    //raw defaults to be overridden
+    if (useRaw) {
+        Elements.fileTree.css(jqo);
+        
+        jqo.on("selected", function(e, title){
+            jQuery(this).find(".title").css({
+                "background-color" : "#FFFFFF"
+            });
+            title.css({
+                "background-color" : "#EEEEEE"
+            });
+        });
+        
+        jqo.on("toggled", function(e, toggle, state){
+            if (state)
+                toggle.text("-");
+            else
+                toggle.text("+");
+        });
+    }
+    
+    return jqo;
+};
+//sample css
+Elements.fileTree.css = function(jqo)
+{
+    jqo.css({
+        "display"  : "block",
+        "position"  : "relative",
+        "margin"   : "0px",
+        "padding"  : "0px"
+    });
+    jqo.find("ul").css({
+        "display"  : "block",
+        "position"  : "relative",
+        "margin"        : "0px",
+        "padding"       : "0px 0px 0px 20px"
+    });
+    jqo.find("li").css({
+        "display"  : "block",
+        "position"  : "relative",
+        "margin"        : "0px",
+        "padding"       : "1px",
+        "list-style-type" : "none"
+    });
+    jqo.find(".title").css({
+        "margin" : "0px",
+        "padding"  : "0px",
+        "vertical-align" : "middle"
+    });
+    jqo.find(".check").css({
+        "display"  : "inline-block",
+        "position"  : "relative",
+        "width"  : "14px",
+        "height"  : "14px",
+        "margin" : "0px",
+        "padding"  : "2px",
+        "vertical-align" : "middle"
+    });
+    jqo.find(".check input").css({
+        "width"  : "100%",
+        "height"  : "100%",
+        "margin" : "0px",
+        "padding"  : "0px"
+    });
+    jqo.find(".toggle").css({
+        "display"  : "inline-block",
+        "position"  : "relative",
+        "width"  : "14px",
+        "height"  : "14px",
+        "margin" : "0px",
+        "padding"  : "2px",
+        "text-align" : "center",
+        "vertical-align" : "middle"
+    });
+    jqo.find(".type").css({
+        "display"  : "inline-block",
+        "position"  : "relative",
+        "width"  : "14px",
+        "height"  : "14px",
+        "margin" : "0px",
+        "padding"  : "3px",
+        "overflow"  : "hidden",
+        "font-size"  : "50%",
+        "border"  : "1px solid #E1E1E1",
+        "text-align" : "center",
+        "vertical-align" : "middle"
+    });
+    jqo.find(".name").css({
+        "display"  : "inline-block",
+        "position"  : "relative",
+        "margin" : "0px",
+        "padding"  : "2px"
+    });
+};
+Elements.fileTree.template = function()
+{
+    return ""
+        + "<div class='title'>"
+        + "<span class='check'><input type=\"checkbox\"></span>"
+        + "<span class='toggle'>-</span>"
+        + "<span class='type'>{{type}}</span>"
+        + "<span class='name'>{{name}}</span>"
+        + "</div>"
+        + "<ul>"
+        + "[[contents:"
+        + "<li>"
+        + "if contents.length call this template again" //self iteration && true/false statements
+        + "</li>"
+        + "]]"
+        + "</ul>";
+};
+Elements.fileTree.json = function(path, files, images)
 {
     var jqo = jQuery("<ul />"),
         jqot = null,
-        jqoc = null,
-        fileTreeImage = function(type, images) {
-            type = Cast.cstring(type);
-            for (var k in images) {
-                if (k == type)
-                    return images[k];
-            }
-            return "*" in images ? images["*"] : ""; //default image
-        };
+        jqoc = null;
+    
+    path = Cast.cstring(path);
     
     for (i in files) {
-        var file = files[i];
+        var file = files[i],
+            img  = Elements.fileTree.getImage(file["type"],images);
         //set the title html
         var jqot = jQuery(
               "<div class='title'>"
-            + "<img src=\""+fileTreeImage(file["type"],images)+"\" />"
-            + " "
-            + "<span>" + file["name"] + "</span>"
+            + "<span class='check'><input type=\"checkbox\"></span>"
+            + "<span class='toggle'>" + (file["contents"].length ? "-":"&nbsp;") + "</span>"
+            + "<span class='type'>" + (img ? "<img src=\""+img+"\" />" : file["type"]) + "</span>"
+            + "<span class='name'>" + file["name"] + "</span>"
             + "</div>"
         );
         //set the contents html
-        var jqoc = Elements.fileTreeJson(file["contents"], images);
+        var jqoc = Elements.fileTree.json(path+file["name"], file["contents"], images);
         //append them to the main
-        var temp = jQuery("<li />");
+        var temp = jQuery("<li path=\"" + path + "\" />");
         temp.append(jqot)
             .append(jqoc);
         jqo.append(temp);
-        //have the title toggle the contents
-        Elements.toggle(jqoc, jqot, {
-            "t" : true,
-            "h" : true,
-            "w" : false
-        });
     }
+    
     return jqo;
+};
+Elements.fileTree.getImage = function(type, images) {
+    type = Cast.cstring(type);
+    for (var k in images) {
+        if (k == type)
+            return images[k];
+    }
+    return "*" in images ? images["*"] : ""; //default image
 };
 /**
  * Lists files/folders in a dropdown method based on url list
