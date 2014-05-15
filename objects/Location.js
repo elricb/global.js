@@ -111,7 +111,7 @@ var Location = {
                                         odf.reject(odf, "failed", "image from detect location could not be resolved", data);
                                     });
                             });
-                    });                
+                    });
             });
         }).promise();
     },

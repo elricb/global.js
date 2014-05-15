@@ -2,12 +2,12 @@
  * Safe/Defaults variable casting and type detection
  * from: objects/Cast.js
  * @class Cast
- * @version 3.5
+ * @version 3.7
  * @requires javascript1.0+
  */
 var Cast = {
     //version
-    v:3.6,
+    v:3.7,
     /**
      * convert anything to integer
      * @memberOf Class
@@ -314,6 +314,19 @@ var Cast = {
         if (typeof v == 'object' && v)
             if ( v.constructor == Function )
                 return true;
+        return false;
+    },
+    /**
+     * check if variable can be stepped through (in a loop)
+     * @return {boolean}
+     */
+    isRecursive : function(v)
+    {
+        if (typeof v == "function" || typeof v == "array")
+            return true;
+        if (typeof v == 'object' && 
+            v.constructor == Object || v.constructor == Array || v.constructor == Function)
+            return true;
         return false;
     },
     /**
